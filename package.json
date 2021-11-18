@@ -1,0 +1,23 @@
+{
+    "name": "RPHQ Bot",
+    "version": "1.0.0",
+    "description": "RPHQ Bot for Discord",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "discord.js": "^13.1.0",
+        "moment": "^2.29.1",
+        "moment-timezone": "^0.5.33",
+        "node-fetch": "^3.0.0",
+        "sequelize": "^6.6.5",
+        "sqlite3": "^5.0.2",
+        "unhomoglyph": "^1.0.6"
+    },
+    "devDependencies": {
+        "eslint": "^8.2.0"
+    }
+}
