@@ -1,5 +1,3 @@
-const crypto = require("crypto");
-
 const { getLeaderboard, getRoleplayFilters } = require("./dataAccessors.js");
 
 // chunks a messages into several messages under 2000 characters
@@ -84,23 +82,6 @@ const hasRoleplay = async (message) => {
     return Boolean(hasFilter);
 };
 
-const sleep = (ms) => {
-    // generic wait function
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-};
-
-const trimText = (text) => {
-    // trims whitespace from text and removes the tupper shortcut if it finds one
-    let trimmedText = text;
-    const colonIdx = trimmedText.indexOf(":");
-    if (colonIdx > -1 && colonIdx <= 16) {
-        trimmedText = text.substring(colonIdx + 1).trim();
-    }
-    return trimmedText;
-};
-
 const generateLeaderboard = async (message, label, from, to, client) => {
     // get the list of leaders from the database
     const leaders = await getLeaderboard(from, to);
@@ -130,16 +111,28 @@ ${leadersOutput}
 \`\`\``;
 };
 
-// generates a unique identifier for a given string
-const generateHash = (text) =>
-    crypto.createHash("sha1").update(text).digest("base64");
+const stripTupperReplies = (text) => {
+    // if the first line is a quote
+    if (text.substring(0, 2) === "> ") {
+        // split the text into an array of lines
+        const textArray = text.split("\n");
+        // remove the quote
+        textArray.splice(0, 1);
+        // check if the second line is an at-tag - tupper does this
+        if (textArray[0].substring(0, 1) === "@") {
+            // remove the second line
+            textArray.splice(0, 1);
+        }
+        // re-join the array and return
+        return textArray.join("\n");
+    }
+    return text;
+};
 
 module.exports = {
     chunkMessage,
-    generateHash,
     generateLeaderboard,
     getWebhook,
     hasRoleplay,
-    sleep,
-    trimText,
+    stripTupperReplies,
 };

@@ -1,25 +1,19 @@
 const moment = require("moment-timezone");
-const { Op } = require("sequelize");
-const crypto = require("crypto");
 
 const { PREFIX, LOCALE } = require("../config.json");
-const { updateRoleplayLog, createRoleplayLog } = require("../dataAccessors.js");
+const { createRoleplayLog } = require("../dataAccessors.js");
 const {
-    generateHash,
     generateLeaderboard,
     getWebhook,
     hasRoleplay,
-    sleep,
-    trimText,
+    stripTupperReplies,
 } = require("../logic.js");
 
-const message = async (message, client) => {
+const message = async (message, client, pendingBotMessages) => {
     const text = message.content
         .replace("н", "h") // this is to accomodate andy candy
-        .replace("к", "k"); // sending weird characters to the bot
-
-    // trim extra whitespace from the message
-    const trimmedText = trimText(text);
+        .replace("к", "k") // sending weird characters to the bot
+        .trim(); // remove extra whitespace
 
     // see if this is a message in a roleplay channel
     const isRoleplay = await hasRoleplay(message);
@@ -30,12 +24,12 @@ const message = async (message, client) => {
 
     // handler for tupperbox RP messages
     if (isRoleplay && message.author.bot) {
-        await processRPFromBot(trimmedText, message);
+        await processRPFromBot(text, message, client, pendingBotMessages);
     }
 
     // handler for user RP messages
     if (isRoleplay && !message.author.bot) {
-        await processRPFromUser(trimmedText, message);
+        await processRPFromUser(text, message, client);
     }
 
     // if the message is from a bot, stop here
@@ -94,49 +88,51 @@ const message = async (message, client) => {
     }
 };
 
-const processRPFromBot = async (trimmedText, message) => {
-    const hash = generateHash(trimmedText); // generate a unique identifier for this post
-    await sleep(500); // cause we have to wait for the original post
-    return updateRoleplayLog(
-        {
-            deletedAt: null, // tupper would have deleted the message, mark it as undeleted
-            messageId: message.id, // but change the ID to reflect the tupper message instead of the user message
-            createdAt: moment(message.createdTimestamp).utc(),
-        },
-        {
-            where: {
-                hash, // use the hash to identify the user's post in the DB
-                createdAt: {
-                    [Op.between]: [
-                        moment(message.createdTimestamp)
-                            .subtract(5, "seconds")
-                            .utc(),
-                        moment(message.createdTimestamp).utc(),
-                    ],
-                },
-            },
-        }
+const processRPFromBot = async (
+    trimmedText,
+    message,
+    client,
+    pendingBotMessages
+) => {
+    const channel = await client.channels.cache.get(message.channelId);
+    console.log(
+        "BOT MESSAGE: ",
+        channel.name,
+        message.content.length,
+        message.content
     );
+    const text = stripTupperReplies(trimmedText);
+    console.log("rp from bot", text);
+    pendingBotMessages.push({
+        id: message.id,
+        text,
+        timestamp: moment().unix(),
+    });
 };
 
-const processRPFromUser = async (trimmedText, message) => {
+const processRPFromUser = async (trimmedText, message, client) => {
     // tupperbox splits messages at 1997 characters to deal with the nitro limit
     // and so will we
+    console.log("rp from user");
     const stringArray = trimmedText.match(/[\s\S]{1,1997}/g);
     if (stringArray) {
         await Promise.all(
-            stringArray.map((s) => {
-                // for each snippet (or the entire post if under 1997 characters)
-                // generate the unique identifier and write the rest to the DB.
-                const subHash = crypto
-                    .createHash("sha1")
-                    .update(s)
-                    .digest("base64");
+            stringArray.map(async (s) => {
+                // write each snippet to the DB
+                const channel = await client.channels.cache.get(
+                    message.channelId
+                );
+                console.log(
+                    "USER MESSAGE: ",
+                    message.author.username,
+                    channel.name,
+                    message.content.length,
+                    message.content
+                );
                 return createRoleplayLog({
                     messageId: message.id,
                     userId: message.author.id,
                     length: s.length,
-                    hash: subHash,
                     createdAt: moment(message.createdTimestamp).utc(),
                 });
             })

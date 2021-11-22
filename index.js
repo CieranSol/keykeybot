@@ -8,6 +8,8 @@ const { message } = require("./handlers/message.js");
 const { messageDelete } = require("./handlers/messageDelete.js");
 const { messageUpdate } = require("./handlers/messageUpdate.js");
 
+const pendingBotMessages = [];
+
 // Initiate our Discord client and let the API know the permissions we need.
 const client = new Client({
     intents: [
@@ -37,10 +39,12 @@ client.on("messageReactionAdd", async (reaction) =>
 );
 
 // Message sent
-client.on("message", async (msg) => message(msg, client));
+client.on("message", async (msg) => message(msg, client, pendingBotMessages));
 
 // Message deleted
-client.on("messageDelete", messageDelete);
+client.on("messageDelete", async (msg) => {
+    messageDelete(msg, pendingBotMessages);
+});
 
 // Message edited
 client.on("messageUpdate", messageUpdate);

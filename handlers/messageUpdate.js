@@ -1,20 +1,14 @@
-const crypto = require("crypto");
-
 const { updateRoleplayLog } = require("../dataAccessors.js");
-const { hasRoleplay, trimText } = require("../logic.js");
+const { hasRoleplay } = require("../logic.js");
 
 const messageUpdate = async (oldMessage, newMessage) => {
     // when a roleplay message is updated, we should update the DB
-    // with the new length and the new hash (unique identifier)
+    // with the new length
     const isRoleplay = await hasRoleplay(oldMessage);
     if (isRoleplay) {
-        const trimmedText = trimText(newMessage.content);
-        const hash = crypto
-            .createHash("sha1")
-            .update(trimmedText)
-            .digest("base64");
+        const trimmedText = newMessage.content.trim();
         updateRoleplayLog(
-            { hash, length: trimmedText.length },
+            { length: trimmedText.length },
             { where: { messageId: oldMessage.id } }
         );
     }
