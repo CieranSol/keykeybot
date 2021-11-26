@@ -2,7 +2,7 @@ const { Permissions } = require("discord.js");
 
 const {
     INTRO_CHANNEL,
-    INTRO_ROLE,
+    VERIFIED_ROLE,
     WELCOME_CHANNEL,
 } = require("../config.json");
 
@@ -78,7 +78,7 @@ const welcomeUser = async (reaction, client) => {
         );
         // let the user into the server
         if (author) {
-            author.roles.remove(INTRO_ROLE);
+            author.roles.add(VERIFIED_ROLE);
             // announce the user's arrival
             const channel = client.channels.cache.get(WELCOME_CHANNEL);
             channel.send(

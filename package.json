@@ -1,5 +1,5 @@
 {
-    "name": "RPHQ Bot",
+    "name": "rphqbot",
     "version": "1.0.0",
     "description": "RPHQ Bot for Discord",
     "main": "index.js",
@@ -9,6 +9,9 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "@discordjs/builders": "^0.8.2",
+        "@discordjs/rest": "^0.1.0-canary.0",
+        "discord-api-types": "^0.24.0",
         "discord.js": "^13.1.0",
         "moment": "^2.29.1",
         "moment-timezone": "^0.5.33",

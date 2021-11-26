@@ -40,8 +40,16 @@ const RoleplayLog = sequelize.define("roleplay_log", {
     deletedAt: { type: Sequelize.DATE },
 });
 
+const Cooldown = sequelize.define("cooldown", {
+    id: { type: Sequelize.INTEGER, primaryKey: true },
+    item: { type: Sequelize.STRING },
+    userId: { type: Sequelize.STRING },
+    usedAt: { type: Sequelize.DATE },
+});
+
 module.exports = {
     sequelize,
+    Cooldown,
     Character,
     RoleplayFilter,
     RoleplayLog,

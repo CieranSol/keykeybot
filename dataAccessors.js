@@ -6,10 +6,16 @@ const {
     Character,
     RoleplayFilter,
     RoleplayLog,
+    Cooldown,
 } = require("./models.js");
 
 let characterCache = {};
 let roleplayFilterCache = {};
+
+// create a row in the roleplay log
+const createRoleplayLog = async (fields) => {
+    return RoleplayLog.create(fields);
+};
 
 // find all tupper-esque characters for a user
 const getCharacters = async (message) => {
@@ -21,6 +27,17 @@ const getCharacters = async (message) => {
     }
 
     return characterCache[message.author.id];
+};
+
+// get config key/value store from DB
+const getCooldown = async (item, userId) => {
+    const cooldown = await Cooldown.findOne({
+        where: {
+            item,
+            userId,
+        },
+    });
+    return cooldown?.dataValues?.usedAt;
 };
 
 // get a leaderboard for a given time period
@@ -55,20 +72,25 @@ const getRoleplayFilters = async () => {
     return roleplayFilterCache;
 };
 
+// update a row in the config key/value store
+const updateCooldown = async (update, where, rowExists) => {
+    if (rowExists) {
+        return Cooldown.update(update, where);
+    }
+    return Cooldown.create(update);
+};
+
 // update a row in the roleplay log
 const updateRoleplayLog = async (update, where) => {
     return RoleplayLog.update(update, where);
 };
 
-// create a row in the roleplay log
-const createRoleplayLog = async (fields) => {
-    return RoleplayLog.create(fields);
-};
-
 module.exports = {
+    createRoleplayLog,
     getCharacters,
+    getCooldown,
     getLeaderboard,
     getRoleplayFilters,
+    updateCooldown,
     updateRoleplayLog,
-    createRoleplayLog,
 };

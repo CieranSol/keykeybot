@@ -7,6 +7,7 @@ const { messageReactionAdd } = require("./handlers/messageReactionAdd.js");
 const { message } = require("./handlers/message.js");
 const { messageDelete } = require("./handlers/messageDelete.js");
 const { messageUpdate } = require("./handlers/messageUpdate.js");
+const { interactionCreate } = require("./handlers/interactionCreate.js");
 
 const pendingBotMessages = [];
 
@@ -48,6 +49,11 @@ client.on("messageDelete", async (msg) => {
 
 // Message edited
 client.on("messageUpdate", messageUpdate);
+
+// Slash command sent
+client.on("interactionCreate", async (interaction) => {
+    interactionCreate(interaction, client);
+});
 
 // Login as the bot
 client.login(BOT_TOKEN);
