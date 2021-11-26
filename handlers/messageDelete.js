@@ -44,8 +44,12 @@ const messageDelete = async (message, pendingBotMessages) => {
                     pendingBotMessages[botMessageIdx || 0];
 
                 // is an expired message - over 5 seconds old
+                console.log(
+                    pendingBotMessages[i].timestamp,
+                    Date.now() / 1000 - 5
+                );
                 const isOldMessage =
-                    pendingBotMessages[i].timestamp >= Date.now() / 1000 - 5;
+                    pendingBotMessages[i].timestamp <= Date.now() / 1000 + 595;
 
                 // if it's this message or an old message, remove from the pendingBotMessages array
                 if (isThisMessage || isOldMessage) {
