@@ -6,12 +6,19 @@ const {
     LOCALE,
     GUILD_ID,
     DAY_AWARD_ID,
+    DAY_AWARD_ID_2,
+    DAY_AWARD_ID_3,
     WEEK_AWARD_ID,
     MONTH_AWARD_ID,
 } = require("./config.json");
 
+const { grantAchievement } = require("./logic.js");
 const config = require("./config.json");
-const { getLeaderboard } = require("./dataAccessors.js");
+const {
+    getLeaderboard,
+    getAchievement,
+    removeTemporaryAchievement,
+} = require("./dataAccessors.js");
 
 // Tell moment, our date library, that Monday is the first day of the week.
 moment.updateLocale("en", {
@@ -31,14 +38,20 @@ const client = new Client({
     ],
 });
 
-const assignAward = async (guild, user, awardId) => {
+const assignAward = async (guild, user, awardId, client) => {
+    const achievement = await getAchievement(awardId);
     // first remove the role from anyone who has it
-    const membersWithRole = await guild.roles.fetch(awardId);
-    await membersWithRole.members.forEach(async (m) => {
-        await m.roles.remove(awardId);
-    });
+    const membersWithRole = await guild.roles.fetch(achievement.roleId);
+    await Promise.all(
+        membersWithRole.members.map(async (m) => {
+            return m.roles.remove(achievement.roleId);
+        })
+    );
+    // also remove the role from the DB
+    await removeTemporaryAchievement(awardId);
     // then add the role to the leader
-    await user.roles.add(awardId);
+    // await user.roles.add(awardId);
+    return grantAchievement(awardId, user, client, true);
 };
 
 client.login(config.BOT_TOKEN).then(async () => {
@@ -63,10 +76,19 @@ client.login(config.BOT_TOKEN).then(async () => {
     }
     // if there was an award set, assign it to the proper user
     if (awardId) {
-        const leader = await getLeaderboard(from, to, 1);
+        const leader = await getLeaderboard(from, to, 3);
+        console.log(leader);
         if (leader[0]) {
             const user = await guild.members.fetch(leader[0].dataValues.userId);
-            await assignAward(guild, user, awardId);
+            await assignAward(guild, user.user, awardId, client);
+        }
+        if (leader[1] && process.argv.includes("-d")) {
+            const user = await guild.members.fetch(leader[1].dataValues.userId);
+            await assignAward(guild, user.user, DAY_AWARD_ID_2, client);
+        }
+        if (leader[2] && process.argv.includes("-d")) {
+            const user = await guild.members.fetch(leader[2].dataValues.userId);
+            await assignAward(guild, user.user, DAY_AWARD_ID_3, client);
         }
         client.destroy();
     } else {

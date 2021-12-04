@@ -1,4 +1,21 @@
-const { getLeaderboard, getRoleplayFilters } = require("./dataAccessors.js");
+const { MessageEmbed } = require("discord.js");
+const {
+    getLeaderboard,
+    getRoleplayFilters,
+    getAchievements,
+    getAchievement,
+    createAchievementLog,
+} = require("./dataAccessors.js");
+const {
+    GUILD_ID,
+    BOT_AVATAR,
+    ACHIEVEMENT_CHANNEL,
+    DAY_AWARD_ID,
+    DAY_AWARD_ID_2,
+    DAY_AWARD_ID_3,
+    WEEK_AWARD_ID,
+    MONTH_AWARD_ID,
+} = require("./config.json");
 
 // chunks a messages into several messages under 2000 characters
 const chunkMessage = (msg) => {
@@ -57,13 +74,14 @@ const getWebhook = async (client, message) => {
     const ourWebhook = webhooksArray.find(
         (webhook) => webhook[1].owner.id === client.user.id
     );
+    console.log(ourWebhook);
     if (ourWebhook) {
         return ourWebhook[1];
     } else {
         // if there's no webhook yet, create one
-        client.channels.cache
+        return client.channels.cache
             .get(message.channelId)
-            .createWebhook("RPHQ Bot", {})
+            .createWebhook("Roleplay HQ Bot", { avatar: BOT_AVATAR })
             .then((webhook) => {
                 return webhook;
             });
@@ -119,7 +137,7 @@ const stripTupperReplies = (text) => {
         // remove the quote
         textArray.splice(0, 1);
         // check if the second line is an at-tag - tupper does this
-        if (textArray[0].substring(0, 1) === "@") {
+        if (textArray[0].substring(0, 2) === "<@") {
             // remove the second line
             textArray.splice(0, 1);
         }
@@ -129,10 +147,74 @@ const stripTupperReplies = (text) => {
     return text;
 };
 
+const switchActiveAchievement = async (achievementId, userId, client) => {
+    // get all the achievements
+    const achievements = await getAchievements();
+    // get all the user's roles
+    const guild = await client.guilds.fetch(GUILD_ID);
+    const member = await guild.members.fetch(userId);
+    const roles = await member.roles.cache.map(({ id, name }) => {
+        return { id, name };
+    });
+    const thisRole = achievements.find((a) => a.id == achievementId);
+    // if any of the roles are in the achievement list, remove them
+    const achievementIds = achievements.map((a) => a.roleId);
+    const dayAchievements = [DAY_AWARD_ID, DAY_AWARD_ID_2, DAY_AWARD_ID_3];
+    roles.forEach(async (r) => {
+        if (achievementIds.includes(r.id)) {
+            if (dayAchievements.includes(achievementId)) {
+                if (r.id !== WEEK_AWARD_ID && r.id !== MONTH_AWARD_ID) {
+                    await member.roles.remove(r.id);
+                }
+            } else if (achievementId === WEEK_AWARD_ID) {
+                if (r.id !== MONTH_AWARD_ID) {
+                    await member.roles.remove(r.id);
+                }
+            } else {
+                await member.roles.remove(r.id);
+            }
+        }
+    });
+    // add the achievement role
+    await member.roles.add(thisRole.roleId);
+};
+
+const grantAchievement = async (achievementId, user, client, isMedal) => {
+    // add this achievement to the log
+    console.log(user);
+    const logResponse = await createAchievementLog({
+        achievementId,
+        userId: user.id,
+    });
+
+    if (logResponse !== false) {
+        // make this the users' active achievement
+        await switchActiveAchievement(achievementId, user.id, client);
+        // announce the achievement
+        const guild = await client.guilds.fetch(GUILD_ID);
+        const achievement = await getAchievement(achievementId);
+        const role = await guild.roles.fetch(achievement.roleId);
+        const channel = await guild.channels.fetch(ACHIEVEMENT_CHANNEL);
+        let authorField = isMedal
+            ? `Leaderboard Winner! ${user.username} has earned the following leaderboard ranking.`
+            : `Achievement Unlocked! ${user.username} has earned an achievement.`;
+        let titleField = `${achievement.icon} ${role.name}`;
+        let descriptionField = achievement.description;
+        const embed = new MessageEmbed()
+            .setColor("#F1C30E")
+            .setAuthor(authorField)
+            .setTitle(titleField)
+            .setDescription(descriptionField);
+        await channel.send({ embeds: [embed] });
+    }
+};
+
 module.exports = {
     chunkMessage,
     generateLeaderboard,
     getWebhook,
     hasRoleplay,
     stripTupperReplies,
+    switchActiveAchievement,
+    grantAchievement,
 };

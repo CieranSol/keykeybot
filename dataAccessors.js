@@ -7,6 +7,8 @@ const {
     RoleplayFilter,
     RoleplayLog,
     Cooldown,
+    Achievement,
+    AchievementLog,
 } = require("./models.js");
 
 let characterCache = {};
@@ -85,12 +87,56 @@ const updateRoleplayLog = async (update, where) => {
     return RoleplayLog.update(update, where);
 };
 
+const getUserAchievements = async (userId) => {
+    return AchievementLog.findAll({
+        where: { userId },
+        include: Achievement,
+    });
+};
+
+const getAchievements = async () => {
+    const response = await Achievement.findAll();
+    return response.map((a) => a.dataValues);
+};
+
+const getAchievement = async (id) => {
+    const achievement = await Achievement.findOne({
+        where: { id },
+    });
+    return achievement.dataValues;
+};
+
+const createAchievementLog = async (fields) => {
+    const check = await AchievementLog.findOne({
+        where: fields,
+    });
+    console.log(fields, check);
+    if (check) {
+        return false;
+    } else {
+        return AchievementLog.create(fields);
+    }
+};
+
+const removeTemporaryAchievement = async (achievementId) => {
+    return AchievementLog.destroy({
+        where: {
+            achievementId,
+        },
+    });
+};
+
 module.exports = {
+    createAchievementLog,
     createRoleplayLog,
+    getAchievement,
+    getAchievements,
+    getUserAchievements,
     getCharacters,
     getCooldown,
     getLeaderboard,
     getRoleplayFilters,
+    removeTemporaryAchievement,
     updateCooldown,
     updateRoleplayLog,
 };
