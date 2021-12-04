@@ -16,6 +16,7 @@ const messageDelete = async (message, pendingBotMessages) => {
             const botMessageIdx = pendingBotMessages.findIndex(
                 (m) => text.indexOf(m.text) > -1
             );
+            console.log(text, pendingBotMessages);
             if (botMessageIdx > -1) {
                 // if it matches, update the log with the tupper message ID & length
                 updateRoleplayLog(
@@ -30,6 +31,7 @@ const messageDelete = async (message, pendingBotMessages) => {
                     }
                 );
             } else {
+                console.log("REAL DELETION", pendingBotMessages, text);
                 // if there's no match, this is a real deletion
                 updateRoleplayLog(
                     { deletedAt: new Date().getTime() },
@@ -57,7 +59,7 @@ const messageDelete = async (message, pendingBotMessages) => {
                 }
             }
             console.log(pendingBotMessages);
-        }, 5000);
+        }, 10000);
     }
 };
 
