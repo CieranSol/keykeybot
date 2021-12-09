@@ -8,6 +8,7 @@ const { message } = require("./handlers/message.js");
 const { messageDelete } = require("./handlers/messageDelete.js");
 const { messageUpdate } = require("./handlers/messageUpdate.js");
 const { interactionCreate } = require("./handlers/interactionCreate.js");
+const { channelCreate } = require("./handlers/channelCreate.js");
 
 const pendingBotMessages = [];
 
@@ -53,6 +54,20 @@ client.on("messageUpdate", messageUpdate);
 // Slash command sent
 client.on("interactionCreate", async (interaction) => {
     interactionCreate(interaction, client);
+});
+
+client.on("channelCreate", async (channel) => {
+    channelCreate(channel);
+});
+
+client.on("channelUpdate", async (oldChannel, newChannel) => {
+    if (oldChannel.parentId !== newChannel.parentId) {
+        // if we're moving between categories, wait a moment for the dust to settle and then reorder
+        console.log("update");
+        setTimeout(async () => {
+            await channelCreate(newChannel);
+        }, 1000);
+    }
 });
 
 // Login as the bot
