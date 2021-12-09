@@ -34,11 +34,13 @@ const sendWarningDM = async (reaction, client) => {
             await reaction.message.author
                 .send(`Heya, welcome to RPHQ! :wave: Your intro has not been approved due to one or more of the following reasons: 
 
-• Your intro must include 3-4 sentences about you and your RP history/preferences.
+• Your intro's about section must be at least 3 sentences long.
+• Your intro's about section must include information about your RP history/preferences.
 • Your intro must include your age to confirm that you are over 18.
 • Your intro must include what name we should address you by.
-• Your intro should not include kinks or NSFW content.
-• You must select at least one role from the **#roles** channel.
+• Your intro __must not__ include kinks or NSFW content.
+
+In addtion to your intro, you must select at least one role from the **#roles** channel.
 
 Please adjust your intro in order to gain access to the server. Thank you! - RPHQ Team`);
             // send confirmation message to the person who reacted
