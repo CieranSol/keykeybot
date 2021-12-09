@@ -47,6 +47,15 @@ const Cooldown = sequelize.define("cooldown", {
     usedAt: { type: Sequelize.DATE },
 });
 
+const Counter = sequelize.define("counter", {
+    id: { type: Sequelize.INTEGER, primaryKey: true },
+    type: { type: Sequelize.STRING },
+    userId: { type: Sequelize.STRING },
+    count: { type: Sequelize.INTEGER },
+    createdAt: { type: Sequelize.DATE },
+    updatedAt: { type: Sequelize.DATE },
+});
+
 const Achievement = sequelize.define("achievement", {
     id: { type: Sequelize.INTEGER, primaryKey: true },
     description: { type: Sequelize.STRING },
@@ -72,6 +81,7 @@ AchievementLog.hasOne(Achievement, {
 module.exports = {
     sequelize,
     Cooldown,
+    Counter,
     Character,
     RoleplayFilter,
     RoleplayLog,

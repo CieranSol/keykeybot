@@ -5,6 +5,7 @@ const moment = require("moment-timezone");
 const {
     LOCALE,
     GUILD_ID,
+    HOUR_AWARD_ID,
     DAY_AWARD_ID,
     DAY_AWARD_ID_2,
     DAY_AWARD_ID_3,
@@ -60,7 +61,22 @@ client.login(config.BOT_TOKEN).then(async () => {
     let from = moment.tz(LOCALE).subtract(1, "days").startOf("day").utc();
     let to = moment.tz(LOCALE).subtract(1, "days").endOf("day").utc();
     let awardId = null;
-    if (process.argv.includes("-d")) {
+    if (process.argv.includes("-h")) {
+        // check if its 12am or 12pm and set the range accordingly
+        if (moment.tz(LOCALE).hour() < 12) {
+            from = moment
+                .tz(LOCALE)
+                .subtract(1, "days")
+                .startOf("day")
+                .add(12, "hours")
+                .utc();
+            to = moment.tz(LOCALE).subtract(1, "days").endOf("day").utc();
+        } else {
+            from = moment.tz(LOCALE).startOf("day").utc();
+            to = moment.tz(LOCALE).startOf("day").add(12, "hours").utc();
+        }
+        awardId = HOUR_AWARD_ID;
+    } else if (process.argv.includes("-d")) {
         // set the award id to the day award; other values already set
         awardId = DAY_AWARD_ID;
     } else if (process.argv.includes("-w")) {
@@ -77,7 +93,6 @@ client.login(config.BOT_TOKEN).then(async () => {
     // if there was an award set, assign it to the proper user
     if (awardId) {
         const leader = await getLeaderboard(from, to, 3);
-        console.log(leader);
         if (leader[0]) {
             const user = await guild.members.fetch(leader[0].dataValues.userId);
             await assignAward(guild, user.user, awardId, client);

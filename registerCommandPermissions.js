@@ -26,8 +26,7 @@ client.on("ready", async () => {
         },
     ];
 
-    const response = await command.permissions.add({ permissions });
-    console.log(response);
+    await command.permissions.add({ permissions });
 });
 
 client.login(BOT_TOKEN);

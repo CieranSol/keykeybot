@@ -1,12 +1,13 @@
 const moment = require("moment-timezone");
 const stringSimilarity = require("string-similarity");
+const { MessageEmbed } = require("discord.js");
 
 const {
     PREFIX,
     LOCALE,
     STELLAR_USER_ID,
     GUILD_ID,
-    DOWNFALL_CHANNEL,
+    DOWNFALL_CATEGORY,
     CHEERS_ACHIEVEMENT,
     TOAST_ACHIEVEMENT,
     BARTENDER_ROLE,
@@ -19,10 +20,27 @@ const {
     COFFEE_ACHIEVEMENT,
     TEA_ACHIEVEMENT,
     MILK_ACHIEVEMENT,
+    HECKIN_ACHIEVEMENT,
+    TENK_ACHIEVEMENT,
+    HUNDREDK_ACHIEVEMENT,
+    MILLION_ACHIEVEMENT,
+    TENMILLION_ACHIEVEMENT,
+    ONE_ON_ONE_CATEGORIES,
+    STARTER_CATEGORY,
+    GROUP_ACHIEVEMENT,
+    ONE_ON_ONE_ACHIEVEMENT,
+    STARTER_ACHIEVEMENT,
+    EVILRONDO_ACHIEVEMENT,
+    GIFT_ACHIEVEMENT,
 } = require("../config.json");
 const {
     createRoleplayLog,
     getUserAchievements,
+    getAchievements,
+    getCharactersWritten,
+    getCounter,
+    createCounter,
+    updateCounter,
 } = require("../dataAccessors.js");
 const {
     generateLeaderboard,
@@ -31,6 +49,7 @@ const {
     stripTupperReplies,
     switchActiveAchievement,
     grantAchievement,
+    getUids,
 } = require("../logic.js");
 
 const message = async (message, client, pendingBotMessages) => {
@@ -41,7 +60,7 @@ const message = async (message, client, pendingBotMessages) => {
 
     // see if this is a message in a roleplay channel
     const isRoleplay = await hasRoleplay(message);
-
+    const isDownfall = message.channel.parent.id === DOWNFALL_CATEGORY;
     // omlette du fromage
     const omlGif =
         "https://cdn.discordapp.com/attachments/891930501420552233/893217474596708362/Lelaboratoirededexter_faca36_7173154.gif";
@@ -56,6 +75,10 @@ const message = async (message, client, pendingBotMessages) => {
     // handler for user RP messages
     if (isRoleplay && !message.author.bot) {
         await processRPFromUser(text, message, client);
+    }
+
+    if (isDownfall && !message.author.bot) {
+        await processDownfallMessage(text, message, client, isRoleplay);
     }
 
     // if the message is from a bot, stop here
@@ -79,6 +102,45 @@ const message = async (message, client, pendingBotMessages) => {
     // heckin respnose
     if (text === "heckin") {
         client.channels.cache.get(message.channelId).send("HECKIN");
+        grantAchievement(HECKIN_ACHIEVEMENT, message.author, client);
+    }
+
+    if (text === "<:evilrondo:887119517707272243>") {
+        // get & set the rondo counter for this user
+        const counter = await getCounter("evilrondo", message.author.id);
+        if (counter === undefined) {
+            createCounter("evilrondo", message.author.id);
+        } else {
+            const hoursSinceLast = moment
+                .duration(moment().diff(counter.updatedAt))
+                .asHours();
+            // only count rondo once per hour
+            if (hoursSinceLast >= 1) {
+                updateCounter(
+                    "evilrondo",
+                    message.author.id,
+                    counter.count + 1
+                );
+                // three rondos for the achievement
+                if (counter.count + 1 >= 3) {
+                    grantAchievement(
+                        EVILRONDO_ACHIEVEMENT,
+                        { id: message.author.id },
+                        client
+                    );
+                }
+            }
+        }
+    }
+
+    // only let users grant the gift achievement in december
+    if (moment().month() === 11) {
+        const uids = getUids(text);
+        uids.forEach((id) => {
+            if (text.includes("🎁") && message.author.id !== id) {
+                grantAchievement(GIFT_ACHIEVEMENT, { id }, client);
+            }
+        });
     }
 
     // if the message isn't a k! command, stop here
@@ -95,18 +157,24 @@ const message = async (message, client, pendingBotMessages) => {
     }
 
     if (["a", "achievements"].includes(command)) {
-        await getAchievements(args, client);
+        await getAchievementsList(args, client, message);
     }
 
     if (["b", "badge"].includes(command)) {
-        await setBadge(args, client);
+        await setBadge(args, client, message);
+    }
+
+    if (["p", "profile"].includes(command)) {
+        await getProfile(args, client, message);
     }
 
     // all the leaderboard commands
     const leaderboardCommands = [
+        "hour",
         "day",
         "pday",
         "week",
+        "phour",
         "pweek",
         "month",
         "pmonth",
@@ -138,15 +206,7 @@ const processRPFromBot = async (
     client,
     pendingBotMessages
 ) => {
-    const channel = await client.channels.cache.get(message.channelId);
-    console.log(
-        "BOT MESSAGE: ",
-        channel.name,
-        message.content.length,
-        message.content
-    );
     const text = stripTupperReplies(trimmedText);
-    console.log("rp from bot", text);
     pendingBotMessages.push({
         id: message.id,
         text,
@@ -154,83 +214,69 @@ const processRPFromBot = async (
     });
 };
 
-const processRPFromUser = async (trimmedText, message, client) => {
-    console.log(trimmedText);
-    if (message.channelId === DOWNFALL_CHANNEL) {
-        console.log("IS DOWNFALL");
-        if (trimmedText.toLowerCase().includes("cheers")) {
-            grantAchievement(CHEERS_ACHIEVEMENT, message.author, client);
-        }
-        if (trimmedText.toLowerCase().includes("toast")) {
-            grantAchievement(TOAST_ACHIEVEMENT, message.author, client);
-        }
-
-        const idRegex = /<@!([0-9]+)>/gm;
-        const hasUserId = trimmedText.match(idRegex);
-        console.log("hasUserId:", hasUserId);
-        if (hasUserId) {
-            hasUserId.forEach(async (uid) => {
-                const userId = uid.substr(3, uid.length - 4);
-                const guild = await client.guilds.fetch(GUILD_ID);
-                const author = await guild.members.fetch(message.author.id);
-                const user = await guild.members.fetch(userId);
-                console.log("FETCH", userId, user.user);
-                const authorRoleArray = await Promise.all(
-                    author.roles.cache.map(async ({ id }) => {
-                        return id;
-                    })
-                );
-                if (authorRoleArray.includes(BARTENDER_ROLE)) {
-                    if (trimmedText.includes("🍸")) {
-                        grantAchievement(
-                            COCKTAIL_ACHIEVEMENT,
-                            user.user,
-                            client
-                        );
-                    }
-                    if (trimmedText.includes("🍺")) {
-                        grantAchievement(BEER_ACHIEVEMENT, user.user, client);
-                    }
-                    if (trimmedText.includes("🍷")) {
-                        grantAchievement(WINE_ACHIEVEMENT, user.user, client);
-                    }
-                    if (trimmedText.includes("🍹")) {
-                        grantAchievement(
-                            TROPICAL_ACHIEVEMENT,
-                            user.user,
-                            client
-                        );
-                    }
-                    if (trimmedText.includes("🍾")) {
-                        grantAchievement(
-                            CHAMPAGNE_ACHIEVEMENT,
-                            user.user,
-                            client
-                        );
-                    }
-                    if (trimmedText.includes("🥃")) {
-                        grantAchievement(
-                            TUMBLER_ACHIEVEMENT,
-                            user.user,
-                            client
-                        );
-                    }
-                    if (trimmedText.includes("☕")) {
-                        grantAchievement(COFFEE_ACHIEVEMENT, user.user, client);
-                    }
-                    if (trimmedText.includes("🍵")) {
-                        grantAchievement(TEA_ACHIEVEMENT, user.user, client);
-                    }
-                    if (trimmedText.includes("🥛")) {
-                        grantAchievement(MILK_ACHIEVEMENT, user.user, client);
-                    }
-                }
-            });
-        }
+const processDownfallMessage = async (
+    trimmedText,
+    message,
+    client,
+    isRoleplay
+) => {
+    // cheers and toast have to be in roleplay channls
+    if (isRoleplay && trimmedText.toLowerCase().includes("cheers")) {
+        grantAchievement(CHEERS_ACHIEVEMENT, message.author, client);
     }
+    if (isRoleplay && trimmedText.toLowerCase().includes("toast")) {
+        grantAchievement(TOAST_ACHIEVEMENT, message.author, client);
+    }
+
+    const uids = getUids(trimmedText);
+    if (uids.length > 0) {
+        uids.forEach(async (userId) => {
+            // get the author's user object
+            const guild = await client.guilds.fetch(GUILD_ID);
+            const author = await guild.members.fetch(message.author.id);
+            const user = await guild.members.fetch(userId);
+            const authorRoleArray = await Promise.all(
+                author.roles.cache.map(async ({ id }) => {
+                    return id;
+                })
+            );
+            // check that the author is a bartender
+            if (authorRoleArray.includes(BARTENDER_ROLE)) {
+                if (trimmedText.includes("🍸")) {
+                    grantAchievement(COCKTAIL_ACHIEVEMENT, user.user, client);
+                }
+                if (trimmedText.includes("🍺")) {
+                    grantAchievement(BEER_ACHIEVEMENT, user.user, client);
+                }
+                if (trimmedText.includes("🍷")) {
+                    grantAchievement(WINE_ACHIEVEMENT, user.user, client);
+                }
+                if (trimmedText.includes("🍹")) {
+                    grantAchievement(TROPICAL_ACHIEVEMENT, user.user, client);
+                }
+                if (trimmedText.includes("🍾")) {
+                    grantAchievement(CHAMPAGNE_ACHIEVEMENT, user.user, client);
+                }
+                if (trimmedText.includes("🥃")) {
+                    grantAchievement(TUMBLER_ACHIEVEMENT, user.user, client);
+                }
+                if (trimmedText.includes("☕")) {
+                    grantAchievement(COFFEE_ACHIEVEMENT, user.user, client);
+                }
+                if (trimmedText.includes("🍵")) {
+                    grantAchievement(TEA_ACHIEVEMENT, user.user, client);
+                }
+                if (trimmedText.includes("🥛")) {
+                    grantAchievement(MILK_ACHIEVEMENT, user.user, client);
+                }
+            }
+        });
+    }
+};
+
+const processRPFromUser = async (trimmedText, message, client) => {
     // tupperbox splits messages at 1997 characters to deal with the nitro limit
     // and so will we
-    console.log("rp from user");
     const stringArray = trimmedText.match(/[\s\S]{1,1997}/g);
     if (stringArray) {
         await Promise.all(
@@ -246,7 +292,7 @@ const processRPFromUser = async (trimmedText, message, client) => {
                     message.content.length,
                     message.content
                 );
-                return createRoleplayLog({
+                createRoleplayLog({
                     messageId: message.id,
                     userId: message.author.id,
                     length: s.length,
@@ -254,7 +300,34 @@ const processRPFromUser = async (trimmedText, message, client) => {
                 });
             })
         );
-        return true;
+    }
+
+    // check how many characters the user has written so we can give them
+    // achievements if necssary
+    const getCharacters = await getCharactersWritten(message.author.id);
+    const charactersWritten =
+        getCharacters?.dataValues?.totalCharactersWritten || 0;
+    const user = { id: message.author.id };
+    if (charactersWritten >= 10000) {
+        grantAchievement(TENK_ACHIEVEMENT, user, client);
+    }
+    if (charactersWritten >= 100000) {
+        grantAchievement(HUNDREDK_ACHIEVEMENT, user, client);
+    }
+    if (charactersWritten >= 1000000) {
+        grantAchievement(MILLION_ACHIEVEMENT, user, client);
+    }
+    if (charactersWritten >= 10000000) {
+        grantAchievement(TENMILLION_ACHIEVEMENT, user, client);
+    }
+    const oneOnOneCategories = ONE_ON_ONE_CATEGORIES.split(",");
+
+    if (message.channel.id === STARTER_CATEGORY) {
+        grantAchievement(STARTER_ACHIEVEMENT, user, client);
+    } else if (oneOnOneCategories.includes(message.channel.parent.id)) {
+        grantAchievement(ONE_ON_ONE_ACHIEVEMENT, user, client);
+    } else {
+        grantAchievement(GROUP_ACHIEVEMENT, user, client);
     }
 };
 
@@ -281,6 +354,31 @@ const getLeaderboard = async (message, command, client) => {
     let string = `Today's`;
     // update these variables based on what kind of leaderboard was requested
     switch (command) {
+        case "hour":
+            if (moment.tz(LOCALE).hour() < 12) {
+                start = moment.tz(LOCALE).startOf("day").utc();
+                end = moment.tz(LOCALE).startOf("day").add(12, "hours").utc();
+            } else {
+                start = moment.tz(LOCALE).startOf("day").add(12, "hours").utc();
+                end = moment.tz(LOCALE).endOf("day").utc();
+            }
+            string = `Half-day's`;
+            break;
+        case "phour":
+            if (moment.tz(LOCALE).hour() < 12) {
+                start = moment
+                    .tz(LOCALE)
+                    .subtract(1, "days")
+                    .startOf("day")
+                    .add(12, "hours")
+                    .utc();
+                end = moment.tz(LOCALE).subtract(1, "days").endOf("day").utc();
+            } else {
+                start = moment.tz(LOCALE).startOf("day").utc();
+                end = moment.tz(LOCALE).startOf("day").add(12, "hours").utc();
+            }
+            string = `Previous Half-day's`;
+            break;
         case "day":
             // already defined, do nothing
             break;
@@ -325,12 +423,51 @@ const getLeaderboard = async (message, command, client) => {
     return response;
 };
 
-const getAchievements = async (args, client) => {
-    let username = message.author.username;
+// get the list of all the non-special achievements
+const getAchievementsList = async (args, client, message) => {
+    const achievements = await getAchievements(true);
+    const achArray = await Promise.all(
+        achievements.map(async (a) => {
+            const guild = await client.guilds.fetch(GUILD_ID);
+            const role = await guild.roles.fetch(a.roleId);
+            return { ...a, name: role.name };
+        })
+    );
+    const str = achArray
+        .sort((a, b) => (a.name > b.name ? 1 : -1))
+        .map((a) => `${a.icon} **${a.name}** - ${a.description}`);
+    const embed = new MessageEmbed()
+        .setColor("#F1C30E")
+        .setTitle("Achievements")
+        .setDescription(str.length > 0 ? str.join("\n") : "");
+    message.channel.send({ embeds: [embed] });
+};
+
+// sets a user's badge next to their name
+const setBadge = async (args, client, message) => {
+    const userAchievements = await getUserAchievements(message.author.id);
+    const emojiList = userAchievements.map(
+        (a) => a.dataValues.achievement.dataValues
+    );
+    console.log(`EMOJI: ->${args[0]}<-`);
+    const emoji = emojiList.find((e) => e.icon === args[0]);
+    // check if they have the emoji theyre requesting
+    if (emoji) {
+        switchActiveAchievement(emoji.id, message.author.id, client);
+    } else {
+        message.reply("*Sorry, you don't have this badge.*");
+    }
+};
+
+const getProfile = async (args, client, message) => {
     let user = null;
     if (args[0]) {
-        console.log(args[0].substring(0, 2));
-        if (args[0].substring(0, 2) !== "<@") {
+        const uids = getUids(args[0]);
+
+        if (uids.length > 0) {
+            user = await client.users.cache.get(uids[0]);
+        } else {
+            // if there's no UIDs found, try and figure out the user they want
             const users = await client.users.cache.map((u) => u.username);
             const usersObj = await client.users.cache.map(
                 ({ username, id }) => {
@@ -342,45 +479,44 @@ const getAchievements = async (args, client) => {
                 (u) => u.username === match.bestMatch.target
             );
             user = await client.users.cache.get(thisUser.id);
-        } else {
-            console.log(args[0], args[0].substring(3, args[0].length - 1));
-            user = await client.users.fetch(
-                args[0].substring(3, args[0].length - 1)
-            );
-        }
-        if (user) {
-            username = user.username;
         }
     } else {
+        // if there's no arg specified, pull the author's profile
         user = message.author;
     }
-    const response = await getUserAchievements(user.id);
-    const achievements = response.map((a) => a.dataValues);
-    const str = await Promise.all(
+    const {
+        dataValues: { totalCharactersWritten: response },
+    } = await getCharactersWritten(user.id);
+    const achievementResponse = await getUserAchievements(user.id);
+    const achievements = achievementResponse.map((a) => a.dataValues);
+    // build the achievements string
+    const achievementString = await Promise.all(
         achievements.map(async (a) => {
-            console.log(a);
             const roleObj = a.achievement.dataValues;
             const guild = await client.guilds.fetch(GUILD_ID);
             const role = await guild.roles.fetch(roleObj.roleId);
             return `${roleObj.icon} **${role.name}** - ${roleObj.description}`;
         })
     );
-    message.reply(`*${username}'s Achievements*
-${str.length > 0 ? str.join("\n") : "*No achievements yet.*"}
-`);
-};
-
-const setBadge = async (args, client) => {
-    const userAchievements = await getUserAchievements(message.author.id);
-    const emojiList = userAchievements.map(
-        (a) => a.dataValues.achievement.dataValues
-    );
-    const emoji = emojiList.find((e) => e.icon === args[0]);
-    if (emoji) {
-        switchActiveAchievement(emoji.id, message.author.id, client);
-    } else {
-        message.reply("*Sorry, you don't have this badge.*");
-    }
+    const guild = await client.guilds.fetch(GUILD_ID);
+    const member = await guild.members.fetch(user.id);
+    // compose the embed
+    const embed = new MessageEmbed()
+        .setColor(member.displayHexColor)
+        .setTitle(`${user.username}'s RPHQ Profile`)
+        .setDescription(`**Join date:** ${member.joinedAt.toLocaleDateString()}
+**Roleplay written on RPHQ:** ${
+        response ? response.toLocaleString() : 0
+    } characters
+**Achievements:**
+${
+    achievementString.length > 0
+        ? achievementString.join("\n")
+        : "*No achievements yet.*"
+}`);
+    message.channel.send({
+        embeds: [embed],
+    });
 };
 
 module.exports = {

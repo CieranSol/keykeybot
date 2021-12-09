@@ -63,7 +63,6 @@ client.on("channelCreate", async (channel) => {
 client.on("channelUpdate", async (oldChannel, newChannel) => {
     if (oldChannel.parentId !== newChannel.parentId) {
         // if we're moving between categories, wait a moment for the dust to settle and then reorder
-        console.log("update");
         setTimeout(async () => {
             await channelCreate(newChannel);
         }, 1000);

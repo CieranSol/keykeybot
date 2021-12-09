@@ -4,30 +4,7 @@ const { SENPAIS_STICK_ROLE, VERIFIED_ROLE } = require("../config.json");
 
 const interactionCreate = async (interaction, client) => {
     if (!interaction.isCommand()) return;
-    console.log(interaction);
     if (interaction.commandName === "stick") {
-        // check cooldown
-        // const cooldown = await getCooldown("stick", interaction.user.id);
-        // console.log("cooldown: ", cooldown);
-        // const cooldownValue = moment(cooldown).valueOf();
-        // const timeoutValue = moment().subtract(5, "minutes").valueOf();
-        // console.log(cooldownValue, timeoutValue);
-        // if (!cooldown || cooldownValue <= timeoutValue) {
-        console.log("fire action");
-        // await updateCooldown(
-        //     {
-        //         usedAt: moment().toDate(),
-        //         item: "stick",
-        //         userId: interaction.user.id,
-        //     },
-        //     {
-        //         where: {
-        //             item: "stick",
-        //             userId: interaction.user.id,
-        //         },
-        //     },
-        //     cooldown
-        // );
         await interaction.reply(`*<@${interaction.user.id}> pouts softly, expressing their frustration at failing to be heard in the busy room. They take out a polished stick, crafted from rich, gnarled wood. The stick begins to glow a bright purple, and motes of energy fly out from its tip, temporarily silencing the voices.*
         
 **[Senpai's Stick: All users muted for 30 seconds.]**`);

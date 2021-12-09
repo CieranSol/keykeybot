@@ -5,6 +5,7 @@ const {
     getAchievements,
     getAchievement,
     createAchievementLog,
+    getCharactersWritten,
 } = require("./dataAccessors.js");
 const {
     GUILD_ID,
@@ -66,6 +67,7 @@ const chunkMessage = (msg) => {
     return chunks;
 };
 
+// gets or creates a webhook for sending a tupper-style message
 const getWebhook = async (client, message) => {
     // get the webhooks for this channel
     const webhooks = await message.channel.fetchWebhooks();
@@ -74,7 +76,6 @@ const getWebhook = async (client, message) => {
     const ourWebhook = webhooksArray.find(
         (webhook) => webhook[1].owner.id === client.user.id
     );
-    console.log(ourWebhook);
     if (ourWebhook) {
         return ourWebhook[1];
     } else {
@@ -88,18 +89,26 @@ const getWebhook = async (client, message) => {
     }
 };
 
+// checks if the message is in a roleplay channel
 const hasRoleplay = async (message) => {
     // get the list of roleplay filters and see if a given message is in that channel/category
     const roleplayFilters = await getRoleplayFilters();
+    let channel = message.channelId;
+    let parent = message.channel.parentId;
+    if (
+        message.type === "GUILD_PUBLIC_THREAD" ||
+        message.type === "GUILD_PRIVATE_THREAD"
+    ) {
+        channel = message.channel.parent.id;
+        parent = message.channel.parent.parent.id;
+    }
     const hasFilter = roleplayFilters.find((f) => {
-        return (
-            (message.channelId == f.discordId && f.type === "channel") ||
-            (message.channel.parentId == f.discordId && f.type === "category")
-        );
+        return channel == f.discordId || parent == f.discordId;
     });
     return Boolean(hasFilter);
 };
 
+// generates the leaderboard string
 const generateLeaderboard = async (message, label, from, to, client) => {
     // get the list of leaders from the database
     const leaders = await getLeaderboard(from, to);
@@ -129,6 +138,7 @@ ${leadersOutput}
 \`\`\``;
 };
 
+// strips everything besides the user's text from a tupper message
 const stripTupperReplies = (text) => {
     // if the first line is a quote
     if (text.substring(0, 2) === "> ") {
@@ -147,6 +157,7 @@ const stripTupperReplies = (text) => {
     return text;
 };
 
+// switches the user's active achievement (their badge)
 const switchActiveAchievement = async (achievementId, userId, client) => {
     // get all the achievements
     const achievements = await getAchievements();
@@ -179,9 +190,9 @@ const switchActiveAchievement = async (achievementId, userId, client) => {
     await member.roles.add(thisRole.roleId);
 };
 
+// grants a user an achievement
 const grantAchievement = async (achievementId, user, client, isMedal) => {
     // add this achievement to the log
-    console.log(user);
     const logResponse = await createAchievementLog({
         achievementId,
         userId: user.id,
@@ -189,24 +200,39 @@ const grantAchievement = async (achievementId, user, client, isMedal) => {
 
     if (logResponse !== false) {
         // make this the users' active achievement
-        await switchActiveAchievement(achievementId, user.id, client);
+        // await switchActiveAchievement(achievementId, user.id, client);
         // announce the achievement
         const guild = await client.guilds.fetch(GUILD_ID);
         const achievement = await getAchievement(achievementId);
         const role = await guild.roles.fetch(achievement.roleId);
         const channel = await guild.channels.fetch(ACHIEVEMENT_CHANNEL);
         let authorField = isMedal
-            ? `Leaderboard Winner! ${user.username} has earned the following leaderboard ranking.`
-            : `Achievement Unlocked! ${user.username} has earned an achievement.`;
+            ? `**Leaderboard Winner! <@${user.id}> has earned the following leaderboard ranking.**`
+            : `**Achievement Unlocked! <@${user.id}> has earned an achievement.**`;
         let titleField = `${achievement.icon} ${role.name}`;
         let descriptionField = achievement.description;
         const embed = new MessageEmbed()
             .setColor("#F1C30E")
-            .setAuthor(authorField)
             .setTitle(titleField)
             .setDescription(descriptionField);
-        await channel.send({ embeds: [embed] });
+        await channel.send({ content: authorField, embeds: [embed] });
     }
+};
+
+// parses UIDs from a text string
+const getUids = (text) => {
+    const idRegex = /<@!?([0-9]+)>/gm;
+    const hasUserId = text.match(idRegex);
+    if (hasUserId) {
+        return hasUserId.map((uid) => {
+            // sometimes there's a ! in userIds
+            if (uid.includes("!")) {
+                return uid.substr(3, uid.length - 4);
+            }
+            return uid.substr(2, uid.length - 3);
+        });
+    }
+    return [];
 };
 
 module.exports = {
@@ -217,4 +243,5 @@ module.exports = {
     stripTupperReplies,
     switchActiveAchievement,
     grantAchievement,
+    getUids,
 };

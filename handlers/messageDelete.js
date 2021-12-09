@@ -16,7 +16,6 @@ const messageDelete = async (message, pendingBotMessages) => {
             const botMessageIdx = pendingBotMessages.findIndex(
                 (m) => text.indexOf(m.text) > -1
             );
-            console.log(text, pendingBotMessages);
             if (botMessageIdx > -1) {
                 // if it matches, update the log with the tupper message ID & length
                 updateRoleplayLog(
@@ -31,7 +30,6 @@ const messageDelete = async (message, pendingBotMessages) => {
                     }
                 );
             } else {
-                console.log("REAL DELETION", pendingBotMessages, text);
                 // if there's no match, this is a real deletion
                 updateRoleplayLog(
                     { deletedAt: new Date().getTime() },
@@ -45,20 +43,15 @@ const messageDelete = async (message, pendingBotMessages) => {
                     pendingBotMessages[i].id ===
                     pendingBotMessages[botMessageIdx || 0];
 
-                // is an expired message - over 5 seconds old
-                console.log(
-                    pendingBotMessages[i].timestamp,
-                    Date.now() / 1000 - 5
-                );
+                // is an expired message - over 10 seconds old
                 const isOldMessage =
-                    pendingBotMessages[i].timestamp <= Date.now() / 1000 + 595;
+                    pendingBotMessages[i].timestamp <= Date.now() / 1000 - 10;
 
                 // if it's this message or an old message, remove from the pendingBotMessages array
                 if (isThisMessage || isOldMessage) {
                     pendingBotMessages.splice(i, 1);
                 }
             }
-            console.log(pendingBotMessages);
         }, 10000);
     }
 };

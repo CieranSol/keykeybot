@@ -54,14 +54,6 @@ if (process.argv[2] && process.argv[3]) {
                             .substring(colonIdx + 1)
                             .trim();
                     }
-                    if (m.author.bot) {
-                        console.log(
-                            "BOT: ",
-                            m.author.id,
-                            " ",
-                            m.author.username
-                        );
-                    }
                     await createRoleplayLog({
                         messageId: m.id,
                         userId: m.author.id,

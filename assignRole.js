@@ -22,7 +22,6 @@ client.login(BOT_TOKEN).then(async () => {
             needVerified.push(guild.members.fetch(m.user.id));
         }
     });
-    console.log(needVerified.length);
     if (needVerified.length > 0) {
         const users = await Promise.all(needVerified);
         const rolePromises = [];
