@@ -1,9 +1,25 @@
-const { SENPAIS_STICK_ROLE, VERIFIED_ROLE } = require("../config.json");
-// const { getCooldown, updateCooldown } = require("../dataAccessors.js");
-// const moment = require("moment-timezone");
+const {
+    SENPAIS_STICK_ROLE,
+    VERIFIED_ROLE,
+    ONE_ON_ONE_CATEGORIES,
+    STARTER_CATEGORIES,
+} = require("../config.json");
+
+const { findCategory } = require("../logic.js");
 
 const interactionCreate = async (interaction, client) => {
     if (!interaction.isCommand()) return;
+    switch (interaction.commandName) {
+        case "stick":
+            stickHandler(interaction, client);
+            break;
+        case "create":
+            createHandler(interaction, client);
+            break;
+    }
+};
+
+const stickHandler = async (interaction, client) => {
     if (interaction.commandName === "stick") {
         await interaction.reply(`*<@${interaction.user.id}> pouts softly, expressing their frustration at failing to be heard in the busy room. They take out a polished stick, crafted from rich, gnarled wood. The stick begins to glow a bright purple, and motes of energy fly out from its tip, temporarily silencing the voices.*
         
@@ -28,15 +44,34 @@ const interactionCreate = async (interaction, client) => {
 
 **[Senpai's Stick: Normal chat permissions restored.]**`);
         }, 30000);
-        // } else {
-        //     interaction.reply({
-        //         content: `Senpai's Stick will cooldown in ${moment(cooldown)
-        //             .add(5, "minutes")
-        //             .fromNow()}`,
-        //         ephemeral: true,
-        //     });
-        // }
     }
+};
+
+const createHandler = async (interaction) => {
+    const typeResponse = await interaction.options.get("type");
+    const type = typeResponse.value;
+    const user = await interaction.options.get("user");
+    const channelNameResponse = await interaction.options.get("channelname");
+    const channelName = channelNameResponse.value.replace(" ", "-");
+    let categoryCategory;
+    let categoryString;
+    if (type === "one_one") {
+        categoryCategory = ONE_ON_ONE_CATEGORIES;
+        categoryString = "1:1 Roleplay";
+    } else {
+        // type === starter
+        categoryCategory = STARTER_CATEGORIES;
+        categoryString = "RP Starter";
+    }
+    const parent = findCategory(channelName, categoryCategory);
+    console.log("PARENT: ", parent);
+    const channelManager = await interaction.guild.channels;
+    const channelResponse = await channelManager.create(channelName, {
+        parent,
+    });
+    interaction.reply(
+        `**${categoryString}** <#${channelResponse?.id}> has been created for <@${user.user.id}>`
+    );
 };
 
 module.exports = {

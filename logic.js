@@ -5,7 +5,6 @@ const {
     getAchievements,
     getAchievement,
     createAchievementLog,
-    getCharactersWritten,
 } = require("./dataAccessors.js");
 const {
     GUILD_ID,
@@ -235,8 +234,32 @@ const getUids = (text) => {
     return [];
 };
 
+const findCategory = (channelName, categories) => {
+    const code = channelName.substr(0, 1).toUpperCase().charCodeAt();
+    if (code < 65) {
+        return 0;
+    }
+    if (code > 90) {
+        return categories.length - 1;
+    }
+    const category = categories.find((c, i) => {
+        console.log(code, c, categories[i + 1]);
+        if (!categories[i + 1]) {
+            console.log("next missing");
+            return true;
+        }
+        return (
+            code >= c.start.charCodeAt() &&
+            code < categories[i + 1].start.charCodeAt()
+        );
+    });
+    console.log(category);
+    return category.id;
+};
+
 module.exports = {
     chunkMessage,
+    findCategory,
     generateLeaderboard,
     getWebhook,
     hasRoleplay,

@@ -1,5 +1,5 @@
 const { Client, Intents } = require("discord.js");
-const { GUILD_ID, SENPAIS_STICK_COMMAND, BOT_TOKEN } = require("./config.json");
+const { GUILD_ID, BOT_TOKEN } = require("./config.json");
 
 const client = new Client({
     intents: [
@@ -16,17 +16,19 @@ client.on("ready", async () => {
 
     const command = await client.guilds.cache
         .get(GUILD_ID)
-        ?.commands.fetch(SENPAIS_STICK_COMMAND);
-
+        ?.commands.fetch("919484729873551371");
+    console.log(command);
     const permissions = [
         {
-            id: "",
+            id: "840393634272772116",
             type: "USER",
             permission: true,
         },
     ];
 
-    await command.permissions.add({ permissions });
+    const response = await command.permissions.add({ permissions });
+    console.log(response);
+    client.destroy();
 });
 
 client.login(BOT_TOKEN);
