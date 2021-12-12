@@ -4,8 +4,11 @@
 const { Client, Intents } = require("discord.js");
 const crypto = require("crypto");
 
-const { BOT_TOKEN, GUILD_ID } = require("./config.json");
-const { getRoleplayFilters, createRoleplayLog } = require("./dataAccessors.js");
+const { BOT_TOKEN, GUILD_ID } = require("../config.json");
+const {
+    getRoleplayFilters,
+    createRoleplayLog,
+} = require("../dataAccessors.js");
 
 const client = new Client({
     intents: [

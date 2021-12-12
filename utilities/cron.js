@@ -11,15 +11,15 @@ const {
     DAY_AWARD_ID_3,
     WEEK_AWARD_ID,
     MONTH_AWARD_ID,
-} = require("./config.json");
+} = require("../config.json");
 
-const { grantAchievement } = require("./logic.js");
-const config = require("./config.json");
+const { grantAchievement } = require("../logic.js");
+const config = require("../config.json");
 const {
     getLeaderboard,
     getAchievement,
     removeTemporaryAchievement,
-} = require("./dataAccessors.js");
+} = require("../dataAccessors.js");
 
 // Tell moment, our date library, that Monday is the first day of the week.
 moment.updateLocale("en", {
