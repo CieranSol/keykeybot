@@ -61,7 +61,7 @@ const getLeaderboard = async (from, to, limit = 20) => {
             },
         },
         group: ["userId"],
-        order: [[sequelize.literal("totalLength"), "DESC"]],
+        order: [[sequelize.fn("sum", sequelize.col("length")), "DESC"]],
         limit,
     });
     return leaders;
@@ -169,12 +169,9 @@ const removeTemporaryAchievement = async (achievementId) => {
 
 // get a users total number of characters written
 const getCharactersWritten = async (userId) => {
-    return RoleplayLog.findOne({
+    const logs = await RoleplayLog.findAll({
         attributes: [
-            [
-                sequelize.fn("sum", sequelize.col("length")),
-                "totalCharactersWritten",
-            ],
+            [sequelize.fn("sum", sequelize.col("length")), "charactersWritten"],
         ],
         where: {
             userId,
@@ -182,7 +179,13 @@ const getCharactersWritten = async (userId) => {
                 [Op.eq]: null,
             },
         },
+        group: [
+            sequelize.literal(
+                `to_timestamp(floor((extract('epoch' from "updatedAt") / 840 )) * 840)`
+            ),
+        ],
     });
+    return logs.map((l) => l.dataValues.charactersWritten);
 };
 
 // get the value of a specific counter for a specific user

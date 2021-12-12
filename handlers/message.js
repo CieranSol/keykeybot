@@ -1,7 +1,6 @@
 const moment = require("moment-timezone");
 const stringSimilarity = require("string-similarity");
 const { MessageEmbed } = require("discord.js");
-
 const {
     PREFIX,
     LOCALE,
@@ -26,7 +25,8 @@ const {
     MILLION_ACHIEVEMENT,
     TENMILLION_ACHIEVEMENT,
     ONE_ON_ONE_CATEGORIES,
-    STARTER_CATEGORY,
+    INACTIVE_ONE_ON_ONE_CATEGORIES,
+    STARTER_CATEGORIES,
     GROUP_ACHIEVEMENT,
     ONE_ON_ONE_ACHIEVEMENT,
     STARTER_ACHIEVEMENT,
@@ -304,9 +304,10 @@ const processRPFromUser = async (trimmedText, message, client) => {
 
     // check how many characters the user has written so we can give them
     // achievements if necssary
-    const getCharacters = await getCharactersWritten(message.author.id);
-    const charactersWritten =
-        getCharacters?.dataValues?.totalCharactersWritten || 0;
+    const cw = await getCharactersWritten(message.author.id);
+    const cwsum = cw.reduce((sum, a) => sum + parseInt(a), 0);
+
+    const charactersWritten = cwsum;
     const user = { id: message.author.id };
     if (charactersWritten >= 10000) {
         grantAchievement(TENK_ACHIEVEMENT, user, client);
@@ -320,9 +321,12 @@ const processRPFromUser = async (trimmedText, message, client) => {
     if (charactersWritten >= 10000000) {
         grantAchievement(TENMILLION_ACHIEVEMENT, user, client);
     }
-    const oneOnOneCategories = ONE_ON_ONE_CATEGORIES.split(",");
+    const oneOnOneCategories = ONE_ON_ONE_CATEGORIES.concat(
+        INACTIVE_ONE_ON_ONE_CATEGORIES
+    ).map((c) => c.id);
+    const starterCategories = STARTER_CATEGORIES.map((c) => c.id);
 
-    if (message.channel.id === STARTER_CATEGORY) {
+    if (starterCategories.includes(message.channel.parent.id)) {
         grantAchievement(STARTER_ACHIEVEMENT, user, client);
     } else if (oneOnOneCategories.includes(message.channel.parent.id)) {
         grantAchievement(ONE_ON_ONE_ACHIEVEMENT, user, client);
@@ -484,18 +488,19 @@ const getProfile = async (args, client, message) => {
         // if there's no arg specified, pull the author's profile
         user = message.author;
     }
-    const {
-        dataValues: { totalCharactersWritten: response },
-    } = await getCharactersWritten(user.id);
+    const cw = await getCharactersWritten(user.id);
+    console.log("CW:", cw);
+    const cwsum = cw.reduce((sum, a) => sum + parseInt(a), 0);
+    const cwavg = cwsum / (cw.length || 0);
     const achievementResponse = await getUserAchievements(user.id);
     const achievements = achievementResponse.map((a) => a.dataValues);
     // build the achievements string
     const achievementString = await Promise.all(
         achievements.map(async (a) => {
-            const roleObj = a.achievement.dataValues;
+            const roleObj = a.achievement?.dataValues;
             const guild = await client.guilds.fetch(GUILD_ID);
-            const role = await guild.roles.fetch(roleObj.roleId);
-            return `${roleObj.icon} **${role.name}** - ${roleObj.description}`;
+            const role = await guild.roles.fetch(roleObj?.roleId);
+            return `${roleObj?.icon} **${role.name}** - ${roleObj?.description}`;
         })
     );
     const guild = await client.guilds.fetch(GUILD_ID);
@@ -505,9 +510,10 @@ const getProfile = async (args, client, message) => {
         .setColor(member.displayHexColor)
         .setTitle(`${user.username}'s RPHQ Profile`)
         .setDescription(`**Join date:** ${member.joinedAt.toLocaleDateString()}
-**Roleplay written on RPHQ:** ${
-        response ? response.toLocaleString() : 0
-    } characters
+**Roleplay written on RPHQ:** ${Math.round(cwsum).toLocaleString()} characters
+**Average characters per post:** ${Math.round(
+        cwavg
+    ).toLocaleString()} characters
 **Achievements:**
 ${
     achievementString.length > 0
