@@ -17,8 +17,8 @@
         "moment-timezone": "^0.5.33",
         "node-emoji": "^1.11.0",
         "node-fetch": "^3.0.0",
+        "pg": "^8.7.1",
         "sequelize": "^6.6.5",
-        "sqlite3": "^5.0.2",
         "string-similarity": "^4.0.4",
         "unhomoglyph": "^1.0.6"
     },

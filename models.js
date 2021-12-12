@@ -1,14 +1,9 @@
 // this file is for defining our database models
 const { Sequelize } = require("sequelize");
 
-const sequelize = new Sequelize({
-    dialect: "sqlite",
-    storage: "./keykey.db",
-    dialectOptions: {
-        supportBigNumbers: true,
-        bigNumberStrings: true,
-    },
-});
+const { POSTGRES_URI } = require("./config.json");
+
+const sequelize = new Sequelize(POSTGRES_URI);
 
 const Character = sequelize.define(
     "character",
@@ -25,13 +20,13 @@ const Character = sequelize.define(
 );
 
 const RoleplayFilter = sequelize.define("roleplay_filter", {
-    id: { type: Sequelize.INTEGER, primaryKey: true },
+    id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
     discordId: { type: Sequelize.STRING },
     type: { type: Sequelize.STRING },
 });
 
 const RoleplayLog = sequelize.define("roleplay_log", {
-    id: { type: Sequelize.INTEGER, primaryKey: true },
+    id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
     messageId: { type: Sequelize.STRING },
     userId: { type: Sequelize.STRING },
     length: { type: Sequelize.INTEGER },
@@ -41,14 +36,14 @@ const RoleplayLog = sequelize.define("roleplay_log", {
 });
 
 const Cooldown = sequelize.define("cooldown", {
-    id: { type: Sequelize.INTEGER, primaryKey: true },
+    id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
     item: { type: Sequelize.STRING },
     userId: { type: Sequelize.STRING },
     usedAt: { type: Sequelize.DATE },
 });
 
 const Counter = sequelize.define("counter", {
-    id: { type: Sequelize.INTEGER, primaryKey: true },
+    id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
     type: { type: Sequelize.STRING },
     userId: { type: Sequelize.STRING },
     count: { type: Sequelize.INTEGER },
@@ -57,7 +52,7 @@ const Counter = sequelize.define("counter", {
 });
 
 const Achievement = sequelize.define("achievement", {
-    id: { type: Sequelize.INTEGER, primaryKey: true },
+    id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
     description: { type: Sequelize.STRING },
     roleId: { type: Sequelize.STRING },
     icon: { type: Sequelize.STRING },
@@ -66,7 +61,7 @@ const Achievement = sequelize.define("achievement", {
 });
 
 const AchievementLog = sequelize.define("achievement_log", {
-    id: { type: Sequelize.INTEGER, primaryKey: true },
+    id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
     userId: { type: Sequelize.STRING },
     achievementId: { type: Sequelize.INTEGER },
     createdAt: { type: Sequelize.DATE },
