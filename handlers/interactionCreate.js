@@ -9,6 +9,7 @@ const { findCategory } = require("../logic.js");
 
 const interactionCreate = async (interaction, client) => {
     if (!interaction.isCommand()) return;
+    if (ENVIRONMENT === "dev") return;
     switch (interaction.commandName) {
         case "stick":
             stickHandler(interaction, client);
