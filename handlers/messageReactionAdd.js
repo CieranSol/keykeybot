@@ -3,6 +3,7 @@ import { Permissions } from "discord.js";
 import { INTRO_CHANNEL, VERIFIED_ROLE, WELCOME_CHANNEL } from "../config.js";
 
 const messageReactionAdd = async (reaction, client) => {
+    if (ENVIRONMENT === "dev") return;
     // intro channel reacts
     if (reaction.message.channelId === INTRO_CHANNEL && reaction.count === 1) {
         if (reaction.emoji.name === "⚠️") {

@@ -23,6 +23,10 @@ const client = new Client({
     ],
 });
 
+const logException = (err) => {
+    console.log("CAUGHT EXCEPTION: ", err);
+};
+
 // Tell moment, our date library, that Monday is the first day of the week.
 moment.updateLocale("en", {
     week: {
@@ -36,36 +40,68 @@ client.on("ready", async () => {
 });
 
 // Add reaction
-client.on("messageReactionAdd", async (reaction) =>
-    messageReactionAdd(reaction, client)
-);
+client.on("messageReactionAdd", async (reaction) => {
+    try {
+        messageReactionAdd(reaction, client);
+    } catch (e) {
+        logException(e);
+    }
+});
 
 // Message sent
-client.on("message", async (msg) => message(msg, client, pendingBotMessages));
+client.on("message", async (msg) => {
+    try {
+        message(msg, client, pendingBotMessages);
+    } catch (e) {
+        logException(e);
+    }
+});
 
 // Message deleted
 client.on("messageDelete", async (msg) => {
-    messageDelete(msg, pendingBotMessages);
+    try {
+        messageDelete(msg, pendingBotMessages);
+    } catch (e) {
+        logException(e);
+    }
 });
 
 // Message edited
-client.on("messageUpdate", messageUpdate);
+client.on("messageUpdate", async (oldMessage, newMessage) => {
+    try {
+        messageUpdate(oldMessage, newMessage);
+    } catch (e) {
+        logException(e);
+    }
+});
 
 // Slash command sent
 client.on("interactionCreate", async (interaction) => {
-    interactionCreate(interaction, client);
+    try {
+        interactionCreate(interaction, client);
+    } catch (e) {
+        logException(e);
+    }
 });
 
 client.on("channelCreate", async (channel) => {
-    channelCreate(channel);
+    try {
+        channelCreate(channel);
+    } catch (e) {
+        logException(e);
+    }
 });
 
 client.on("channelUpdate", async (oldChannel, newChannel) => {
-    if (oldChannel.parentId !== newChannel.parentId) {
-        // if we're moving between categories, wait a moment for the dust to settle and then reorder
-        setTimeout(async () => {
-            await channelCreate(newChannel);
-        }, 1000);
+    try {
+        if (oldChannel.parentId !== newChannel.parentId) {
+            // if we're moving between categories, wait a moment for the dust to settle and then reorder
+            setTimeout(async () => {
+                await channelCreate(newChannel);
+            }, 1000);
+        }
+    } catch (e) {
+        logException(e);
     }
 });
 

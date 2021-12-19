@@ -1,6 +1,8 @@
 import { hasRoleplay } from "../logic.js";
+import { ENVIRONMENT } from "../config.js";
 
 const channelCreate = async (channel) => {
+    if (ENVIRONMENT === "dev") return;
     // when we create or update channels, if theyre
     // in roleplay categories, sort them in alphabetical
     // order

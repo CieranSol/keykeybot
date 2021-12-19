@@ -2,6 +2,7 @@ import moment from "moment-timezone";
 import stringSimilarity from "string-similarity";
 import { MessageEmbed } from "discord.js";
 import {
+    ENVIRONMENT,
     PREFIX,
     LOCALE,
     STELLAR_USER_ID,
@@ -87,14 +88,17 @@ const message = async (message, client, pendingBotMessages) => {
 
     // oml gif response
     if (text.toLowerCase() == "oml") {
+        if (ENVIRONMENT === "dev") return;
         message.reply(omlGif);
     }
 
     if (text.toLowerCase() == "horny") {
+        if (ENVIRONMENT === "dev") return;
         message.reply(bonkGif);
     }
 
     if (text == "GIRAFFE") {
+        if (ENVIRONMENT === "dev") return;
         message.reply(
             `<@${STELLAR_USER_ID}> https://tenor.com/view/animals-giraffes-lol-gif-3529707`
         );
@@ -102,6 +106,7 @@ const message = async (message, client, pendingBotMessages) => {
 
     // heckin respnose
     if (text === "heckin") {
+        if (ENVIRONMENT === "dev") return;
         client.channels.cache.get(message.channelId).send("HECKIN");
         grantAchievement(HECKIN_ACHIEVEMENT, message.author, client);
     }
