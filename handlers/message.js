@@ -111,14 +111,17 @@ const message = async (message, client, pendingBotMessages) => {
         grantAchievement(HECKIN_ACHIEVEMENT, message.author, client);
     }
 
+    // damb response
     if (text === "damb") {
         client.channels.cache.get(message.channelId).send("DAMB");
     }
 
+    // damb heckin response
     if (text === "damb heckin") {
         client.channels.cache.get(message.channelId).send("BING BONG");
     }
 
+    // evil rondo achievement
     if (text === "<:evilrondo:887119517707272243>") {
         // get & set the rondo counter for this user
         const counter = await getCounter("evilrondo", message.author.id);
@@ -164,11 +167,6 @@ const message = async (message, client, pendingBotMessages) => {
     const commandBody = text.slice(PREFIX.length);
     const args = commandBody.split(" ");
     const command = args.shift().toLowerCase();
-
-    // echo command
-    if (command === "echo" && message.author.username === "CieranSol") {
-        await sendEcho(message, client);
-    }
 
     if (["a", "achievements"].includes(command)) {
         await getAchievementsList(args, client, message);
@@ -351,22 +349,6 @@ const processRPFromUser = async (trimmedText, message, client) => {
         grantAchievement(ONE_ON_ONE_ACHIEVEMENT, user, client);
     } else {
         grantAchievement(GROUP_ACHIEVEMENT, user, client);
-    }
-};
-
-const sendEcho = async (message, client) => {
-    // this function is for testing tupperbox-like functionality.
-    const msg = message.content.slice(PREFIX.length + 4);
-
-    if (msg) {
-        const webhook = await getWebhook(client, message);
-        return webhook
-            .send({
-                content: msg,
-            })
-            .then(() => {
-                message.delete();
-            });
     }
 };
 

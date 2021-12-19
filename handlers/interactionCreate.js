@@ -8,9 +8,10 @@ import {
     ONE_ON_ONE_CATEGORIES,
     STARTER_CATEGORIES,
     ARCHIVE_CATEGORIES,
+    ENVIRONMENT,
 } from "../config.js";
 
-import { findCategory } from "../logic.js";
+import { findCategory, getWebhook } from "../logic.js";
 
 const interactionCreate = async (interaction, client) => {
     if (!interaction.isCommand()) return;
@@ -25,10 +26,28 @@ const interactionCreate = async (interaction, client) => {
         case "word":
             wordHandler(interaction, client);
             break;
+        case "echo":
+            echoHandler(interaction, client);
+            break;
     }
 };
 
-const wordHandler = async (interaction, client) => {
+const echoHandler = async (interaction, client) => {
+    // this replicates tupper-like functionality to post messages on behalf of the bot
+    const statementResponse = await interaction.options.get("statement");
+    const content = statementResponse.value;
+
+    const webhook = await getWebhook(client, interaction);
+    return webhook
+        .send({
+            content,
+        })
+        .then(() => {
+            interaction.reply({ content: "Echo sent.", ephemeral: true });
+        });
+};
+
+const wordHandler = async (interaction) => {
     const page = await got.get(
         "https://www.merriam-webster.com/word-of-the-day/"
     );

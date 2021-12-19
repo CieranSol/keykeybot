@@ -1,6 +1,11 @@
 import { Permissions } from "discord.js";
 
-import { INTRO_CHANNEL, VERIFIED_ROLE, WELCOME_CHANNEL } from "../config.js";
+import {
+    INTRO_CHANNEL,
+    VERIFIED_ROLE,
+    WELCOME_CHANNEL,
+    ENVIRONMENT,
+} from "../config.js";
 
 const messageReactionAdd = async (reaction, client) => {
     if (ENVIRONMENT === "dev") return;
