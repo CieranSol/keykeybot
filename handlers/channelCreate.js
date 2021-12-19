@@ -1,4 +1,4 @@
-const { hasRoleplay } = require("../logic.js");
+import { hasRoleplay } from "../logic.js";
 
 const channelCreate = async (channel) => {
     // when we create or update channels, if theyre
@@ -32,6 +32,4 @@ const channelCreate = async (channel) => {
     }
 };
 
-module.exports = {
-    channelCreate,
-};
+export { channelCreate };

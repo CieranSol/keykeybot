@@ -1,14 +1,14 @@
-const { Client, Intents } = require("discord.js");
-const moment = require("moment-timezone");
+import { Client, Intents } from "discord.js";
+import moment from "moment-timezone";
 
-const { BOT_TOKEN, INTRO_CHANNEL } = require("./config.json");
+import { BOT_TOKEN, INTRO_CHANNEL } from "./config.js";
 
-const { messageReactionAdd } = require("./handlers/messageReactionAdd.js");
-const { message } = require("./handlers/message.js");
-const { messageDelete } = require("./handlers/messageDelete.js");
-const { messageUpdate } = require("./handlers/messageUpdate.js");
-const { interactionCreate } = require("./handlers/interactionCreate.js");
-const { channelCreate } = require("./handlers/channelCreate.js");
+import { messageReactionAdd } from "./handlers/messageReactionAdd.js";
+import { message } from "./handlers/message.js";
+import { messageDelete } from "./handlers/messageDelete.js";
+import { messageUpdate } from "./handlers/messageUpdate.js";
+import { interactionCreate } from "./handlers/interactionCreate.js";
+import { channelCreate } from "./handlers/channelCreate.js";
 
 const pendingBotMessages = [];
 

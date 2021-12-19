@@ -1,8 +1,8 @@
 // for running scheduled tasks such as leaderboard awards
-const { Client, Intents } = require("discord.js");
-const moment = require("moment-timezone");
-const config = require("../config.json");
-const { GUILD_ID } = require("../config.json");
+import { Client, Intents } from "discord.js";
+import moment from "moment-timezone";
+import config from "../config.js";
+import { GUILD_ID } from "../config.js";
 
 // Tell moment, our date library, that Monday is the first day of the week.
 moment.updateLocale("en", {

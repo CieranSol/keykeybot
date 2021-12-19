@@ -1,7 +1,7 @@
 // this file is for defining our database models
-const { Sequelize } = require("sequelize");
+import { Sequelize } from "sequelize";
 
-const { POSTGRES_URI } = require("./config.json");
+import { POSTGRES_URI } from "./config.js";
 
 const sequelize = new Sequelize(POSTGRES_URI);
 
@@ -31,8 +31,8 @@ const RoleplayLog = sequelize.define("roleplay_log", {
     userId: { type: Sequelize.STRING },
     length: { type: Sequelize.INTEGER },
     createdAt: { type: Sequelize.DATE },
-    hash: { type: Sequelize.STRING },
     deletedAt: { type: Sequelize.DATE },
+    channelId: { type: Sequelize.STRING },
 });
 
 const Cooldown = sequelize.define("cooldown", {
@@ -73,7 +73,7 @@ AchievementLog.hasOne(Achievement, {
     sourceKey: "achievementId",
 });
 
-module.exports = {
+export {
     sequelize,
     Cooldown,
     Counter,

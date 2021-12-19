@@ -1,15 +1,15 @@
-const { REST } = require("@discordjs/rest");
-const { Routes } = require("discord-api-types/v9");
-const { BOT_TOKEN, CLIENT_ID, GUILD_ID } = require("../config.json");
-const fs = require("fs");
+import { REST } from "@discordjs/rest";
+import { Routes } from "discord-api-types/v9";
+import { BOT_TOKEN, CLIENT_ID, GUILD_ID } from "../config.js";
+import fs from "fs";
 
 const commands = [];
 const commandFiles = fs
-    .readdirSync("./commands")
+    .readdirSync("../commands")
     .filter((file) => file.endsWith(".js"));
 console.log(commandFiles);
 for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
+    const command = import(`../commands/${file}`);
     commands.push(command.data.toJSON());
 }
 

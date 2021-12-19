@@ -1,12 +1,12 @@
-const { MessageEmbed } = require("discord.js");
-const {
+import { MessageEmbed } from "discord.js";
+import {
     getLeaderboard,
     getRoleplayFilters,
     getAchievements,
     getAchievement,
     createAchievementLog,
-} = require("./dataAccessors.js");
-const {
+} from "./dataAccessors.js";
+import {
     GUILD_ID,
     BOT_AVATAR,
     ACHIEVEMENT_CHANNEL,
@@ -15,7 +15,7 @@ const {
     DAY_AWARD_ID_3,
     WEEK_AWARD_ID,
     MONTH_AWARD_ID,
-} = require("./config.json");
+} from "./config.js";
 
 // chunks a messages into several messages under 2000 characters
 const chunkMessage = (msg) => {
@@ -257,7 +257,7 @@ const findCategory = (channelName, categories) => {
     return category.id;
 };
 
-module.exports = {
+export {
     chunkMessage,
     findCategory,
     generateLeaderboard,

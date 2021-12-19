@@ -1,11 +1,16 @@
-const {
+import got from "got";
+import cheerio from "cheerio";
+
+import {
     SENPAIS_STICK_ROLE,
     VERIFIED_ROLE,
+    INACTIVE_ONE_ON_ONE_CATEGORIES,
     ONE_ON_ONE_CATEGORIES,
     STARTER_CATEGORIES,
-} = require("../config.json");
+    ARCHIVE_CATEGORIES,
+} from "../config.js";
 
-const { findCategory } = require("../logic.js");
+import { findCategory } from "../logic.js";
 
 const interactionCreate = async (interaction, client) => {
     if (!interaction.isCommand()) return;
@@ -13,10 +18,32 @@ const interactionCreate = async (interaction, client) => {
         case "stick":
             stickHandler(interaction, client);
             break;
-        case "create":
-            createHandler(interaction, client);
+        case "channel":
+            channelHandler(interaction, client);
+            break;
+        case "word":
+            wordHandler(interaction, client);
             break;
     }
+};
+
+const wordHandler = async (interaction, client) => {
+    const page = await got.get(
+        "https://www.merriam-webster.com/word-of-the-day/"
+    );
+    const $ = cheerio.load(page.body);
+
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    const word = capitalizeFirstLetter($(".word-and-pronunciation h1").text());
+    const definition = $(".wod-definition-container > p").text();
+    const editedDef = definition
+        .substring(0, definition.length - 15)
+        .replace("// ", "\n*");
+    interaction.reply(`Word of the Day: **${word}**
+${editedDef}*`);
 };
 
 const stickHandler = async (interaction, client) => {
@@ -47,33 +74,78 @@ const stickHandler = async (interaction, client) => {
     }
 };
 
-const createHandler = async (interaction) => {
-    const typeResponse = await interaction.options.get("type");
-    const type = typeResponse.value;
-    const user = await interaction.options.get("user");
-    const channelNameResponse = await interaction.options.get("channelname");
-    const channelName = channelNameResponse.value.replace(" ", "-");
-    let categoryCategory;
-    let categoryString;
-    if (type === "one_one") {
-        categoryCategory = ONE_ON_ONE_CATEGORIES;
-        categoryString = "1:1 Roleplay";
-    } else {
-        // type === starter
-        categoryCategory = STARTER_CATEGORIES;
-        categoryString = "RP Starter";
-    }
-    const parent = findCategory(channelName, categoryCategory);
-    console.log("PARENT: ", parent);
+const channelHandler = async (interaction) => {
+    const subcommand = await interaction.options.getSubcommand();
     const channelManager = await interaction.guild.channels;
-    const channelResponse = await channelManager.create(channelName, {
-        parent,
-    });
-    interaction.reply(
-        `**${categoryString}** <#${channelResponse?.id}> has been created for <@${user.user.id}>`
-    );
+    const user = await interaction.options.get("user");
+    if (subcommand === "create") {
+        const typeResponse = await interaction.options.get("type");
+        const type = typeResponse.value;
+        const channelResponse = await interaction.options.get("channel");
+        const channel = channelResponse.value.replace(" ", "-");
+        let categoryCategory;
+        let categoryString;
+        if (type === "one_one") {
+            categoryCategory = ONE_ON_ONE_CATEGORIES;
+            categoryString = "1:1 Roleplay";
+        } else {
+            // type === starter
+            categoryCategory = STARTER_CATEGORIES;
+            categoryString = "RP Starter";
+        }
+        const parent = findCategory(channel, categoryCategory);
+        const channelCreateResponse = await channelManager.create(channel, {
+            parent,
+        });
+        interaction.reply(
+            `**${categoryString}** <#${channelCreateResponse?.id}> has been created for <@${user.user.id}>`
+        );
+    }
+
+    if (subcommand === "move") {
+        const channel = await interaction.options.get("channel");
+        const destinationResponse = await interaction.options.get(
+            "destination"
+        );
+        const destination = destinationResponse.value;
+        let destinationCategories;
+        let destinationString = "";
+        switch (destination) {
+            case "starter":
+                destinationCategories = STARTER_CATEGORIES;
+                destinationString = "RP Starters";
+                break;
+            case "one_one":
+                destinationCategories = ONE_ON_ONE_CATEGORIES;
+                destinationString = "1:1 Roleplay";
+                break;
+            case "inactive":
+            default:
+                destinationCategories = INACTIVE_ONE_ON_ONE_CATEGORIES;
+                destinationString = "Inactive Roleplay";
+                break;
+        }
+
+        const parent = findCategory(
+            channel.channel.name,
+            destinationCategories
+        );
+        const c = await channelManager.fetch(channel.channel.id);
+        await c.setParent(parent);
+        interaction.reply(
+            `<#${channel.channel.id}> has been moved to ${destinationString}${
+                user ? ` on behalf of <@${user.user.id}>` : ""
+            }.`
+        );
+    }
+
+    if (subcommand === "archive") {
+        const channel = await interaction.options.get("channel");
+        const parent = findCategory(channel.channel.name, ARCHIVE_CATEGORIES);
+        const c = await channelManager.fetch(channel.channel.id);
+        await c.setParent(parent);
+        interaction.reply(`<#${channel.channel.id}> has been archived.`);
+    }
 };
 
-module.exports = {
-    interactionCreate,
-};
+export { interactionCreate };

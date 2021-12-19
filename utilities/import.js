@@ -1,14 +1,10 @@
 // node import.js 1636994400000 1637007561000
 // imports posts between the two timestamps
 // will log when it finds a bot post.
-const { Client, Intents } = require("discord.js");
-const crypto = require("crypto");
+import { Client, Intents } from "discord.js";
 
-const { BOT_TOKEN, GUILD_ID } = require("../config.json");
-const {
-    getRoleplayFilters,
-    createRoleplayLog,
-} = require("../dataAccessors.js");
+import { BOT_TOKEN, GUILD_ID } from "../config.js";
+import { getRoleplayFilters, createRoleplayLog } from "../dataAccessors.js";
 
 const client = new Client({
     intents: [
@@ -61,10 +57,6 @@ if (process.argv[2] && process.argv[3]) {
                         messageId: m.id,
                         userId: m.author.id,
                         length: trimmedText.length,
-                        hash: crypto
-                            .createHash("sha1")
-                            .update(trimmedText)
-                            .digest("base64"),
                     });
                 }
             });

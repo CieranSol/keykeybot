@@ -1,5 +1,5 @@
-const { updateRoleplayLog } = require("../dataAccessors.js");
-const { hasRoleplay, stripTupperReplies } = require("../logic.js");
+import { updateRoleplayLog } from "../dataAccessors.js";
+import { hasRoleplay, stripTupperReplies } from "../logic.js";
 
 const messageDelete = async (message, pendingBotMessages) => {
     // we can't see who has deleted a message, so we need to treat all deletions
@@ -56,6 +56,4 @@ const messageDelete = async (message, pendingBotMessages) => {
     }
 };
 
-module.exports = {
-    messageDelete,
-};
+export { messageDelete };

@@ -1,6 +1,6 @@
-const { Client, Intents } = require("discord.js");
+import { Client, Intents } from "discord.js";
 
-const { BOT_TOKEN, GUILD_ID } = require("../config.json");
+import { BOT_TOKEN, GUILD_ID } from "../config.js";
 
 const client = new Client({
     intents: [

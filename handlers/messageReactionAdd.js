@@ -1,10 +1,6 @@
-const { Permissions } = require("discord.js");
+import { Permissions } from "discord.js";
 
-const {
-    INTRO_CHANNEL,
-    VERIFIED_ROLE,
-    WELCOME_CHANNEL,
-} = require("../config.json");
+import { INTRO_CHANNEL, VERIFIED_ROLE, WELCOME_CHANNEL } from "../config.js";
 
 const messageReactionAdd = async (reaction, client) => {
     // intro channel reacts
@@ -90,6 +86,4 @@ const welcomeUser = async (reaction, client) => {
     }
 };
 
-module.exports = {
-    messageReactionAdd,
-};
+export { messageReactionAdd };

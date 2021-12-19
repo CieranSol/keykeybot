@@ -1,8 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 
 const data = new SlashCommandBuilder()
-    .setName("stick")
-    .setDescription("Use Senpai's Stick.")
-    .setDefaultPermission(false);
+    .setName("word")
+    .setDescription("Word of the day.");
 
 export { data };

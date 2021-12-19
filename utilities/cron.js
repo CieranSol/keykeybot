@@ -1,8 +1,8 @@
 // for running scheduled tasks such as leaderboard awards
-const { Client, Intents } = require("discord.js");
-const moment = require("moment-timezone");
+import { Client, Intents } from "discord.js";
+import moment from "moment-timezone";
 
-const {
+import {
     LOCALE,
     GUILD_ID,
     HOUR_AWARD_ID,
@@ -11,15 +11,15 @@ const {
     DAY_AWARD_ID_3,
     WEEK_AWARD_ID,
     MONTH_AWARD_ID,
-} = require("../config.json");
+} from "../config.js";
 
-const { grantAchievement } = require("../logic.js");
-const config = require("../config.json");
-const {
+import { grantAchievement } from "../logic.js";
+import config from "../config.js";
+import {
     getLeaderboard,
     getAchievement,
     removeTemporaryAchievement,
-} = require("../dataAccessors.js");
+} from "../dataAccessors.js";
 
 // Tell moment, our date library, that Monday is the first day of the week.
 moment.updateLocale("en", {

@@ -1,7 +1,7 @@
-const moment = require("moment-timezone");
-const stringSimilarity = require("string-similarity");
-const { MessageEmbed } = require("discord.js");
-const {
+import moment from "moment-timezone";
+import stringSimilarity from "string-similarity";
+import { MessageEmbed } from "discord.js";
+import {
     PREFIX,
     LOCALE,
     STELLAR_USER_ID,
@@ -32,17 +32,18 @@ const {
     STARTER_ACHIEVEMENT,
     EVILRONDO_ACHIEVEMENT,
     GIFT_ACHIEVEMENT,
-} = require("../config.json");
-const {
+} from "../config.js";
+import {
     createRoleplayLog,
+    getCurrencyLeader,
     getUserAchievements,
     getAchievements,
     getCharactersWritten,
     getCounter,
     createCounter,
     updateCounter,
-} = require("../dataAccessors.js");
-const {
+} from "../dataAccessors.js";
+import {
     generateLeaderboard,
     getWebhook,
     hasRoleplay,
@@ -50,7 +51,7 @@ const {
     switchActiveAchievement,
     grantAchievement,
     getUids,
-} = require("../logic.js");
+} from "../logic.js";
 
 const message = async (message, client, pendingBotMessages) => {
     const text = message.content
@@ -103,6 +104,14 @@ const message = async (message, client, pendingBotMessages) => {
     if (text === "heckin") {
         client.channels.cache.get(message.channelId).send("HECKIN");
         grantAchievement(HECKIN_ACHIEVEMENT, message.author, client);
+    }
+
+    if (text === "damb") {
+        client.channels.cache.get(message.channelId).send("DAMB");
+    }
+
+    if (text === "damb heckin") {
+        client.channels.cache.get(message.channelId).send("BING BONG");
     }
 
     if (text === "<:evilrondo:887119517707272243>") {
@@ -166,6 +175,10 @@ const message = async (message, client, pendingBotMessages) => {
 
     if (["p", "profile"].includes(command)) {
         await getProfile(args, client, message);
+    }
+
+    if (["e", "earned"].includes(command)) {
+        await getCurrencyLeaderboard(message, client);
     }
 
     // all the leaderboard commands
@@ -297,6 +310,7 @@ const processRPFromUser = async (trimmedText, message, client) => {
                     userId: message.author.id,
                     length: s.length,
                     createdAt: moment(message.createdTimestamp).utc(),
+                    channelId: message.channelId,
                 });
             })
         );
@@ -498,9 +512,9 @@ const getProfile = async (args, client, message) => {
     const achievementString = await Promise.all(
         achievements.map(async (a) => {
             const roleObj = a.achievement?.dataValues;
-            const guild = await client.guilds.fetch(GUILD_ID);
-            const role = await guild.roles.fetch(roleObj?.roleId);
-            return `${roleObj?.icon} **${role.name}** - ${roleObj?.description}`;
+            // const guild = await client.guilds.fetch(GUILD_ID);
+            // const role = await guild.roles.fetch(roleObj?.roleId);
+            return roleObj?.icon;
         })
     );
     const guild = await client.guilds.fetch(GUILD_ID);
@@ -517,7 +531,7 @@ const getProfile = async (args, client, message) => {
 **Achievements:**
 ${
     achievementString.length > 0
-        ? achievementString.join("\n")
+        ? achievementString.join("")
         : "*No achievements yet.*"
 }`);
     message.channel.send({
@@ -525,6 +539,18 @@ ${
     });
 };
 
-module.exports = {
-    message,
+const getCurrencyLeaderboard = async (message, client) => {
+    const data = await getCurrencyLeader();
+    console.log(data);
+    const leaderboardString = data.map((r) => {
+        const user = client.users.cache.get(r.userId);
+        return `${user?.username}: ${r.count}`;
+    });
+    message.reply(`**EXPERIMENTAL - Total Rupees Earned**
+\`\`\`
+${leaderboardString.join("\n")}
+\`\`\`
+`);
 };
+
+export { message };

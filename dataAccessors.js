@@ -1,8 +1,8 @@
 // this file is for methods that query the database
-const { Op } = require("sequelize");
-const moment = require("moment-timezone");
+import Sequelize from "sequelize";
+import moment from "moment-timezone";
 
-const {
+import {
     sequelize,
     Character,
     RoleplayFilter,
@@ -11,7 +11,7 @@ const {
     Counter,
     Achievement,
     AchievementLog,
-} = require("./models.js");
+} from "./models.js";
 
 let characterCache = {};
 let roleplayFilterCache = {};
@@ -53,11 +53,11 @@ const getLeaderboard = async (from, to, limit = 20) => {
         ],
         where: {
             createdAt: {
-                [Op.gt]: from.toDate(),
-                [Op.lt]: to.toDate(),
+                [Sequelize.Op.gt]: from.toDate(),
+                [Sequelize.Op.lt]: to.toDate(),
             },
             deletedAt: {
-                [Op.eq]: null,
+                [Sequelize.Op.eq]: null,
             },
         },
         group: ["userId"],
@@ -65,6 +65,44 @@ const getLeaderboard = async (from, to, limit = 20) => {
         limit,
     });
     return leaders;
+};
+
+const getCurrencyLeader = async (limit = 20) => {
+    const leaders = await RoleplayLog.findAll({
+        attributes: [
+            "userId",
+            // "createdAt",
+            [
+                sequelize.fn(
+                    "count",
+                    sequelize.fn("distinct", sequelize.col("channelId"))
+                ),
+                "dayCount",
+            ],
+        ],
+        group: [
+            "userId",
+            [sequelize.fn("date_trunc", "day", sequelize.col("createdAt"))],
+        ],
+    });
+    const leaderArray = leaders
+        .reduce((p, c) => {
+            const idx = p.findIndex((i) => i.userId === c.dataValues.userId);
+            if (idx > -1) {
+                const newCount = p[idx].count + parseInt(c.dataValues.dayCount);
+                p[idx].count = newCount;
+            } else {
+                p.push({
+                    userId: c.dataValues.userId,
+                    count: parseInt(c.dataValues.dayCount),
+                });
+            }
+            return p;
+        }, [])
+        .sort((a, b) => b.count - a.count)
+        .filter((i) => i.count != 0)
+        .slice(0, 20);
+    return leaderArray;
 };
 
 // get the list of roleplay channels & categories
@@ -128,7 +166,7 @@ const getAchievements = async (noSpecials) => {
         response = await Achievement.findAll({
             where: {
                 special: {
-                    [Op.eq]: null,
+                    [Sequelize.Op.eq]: null,
                 },
             },
         });
@@ -176,7 +214,7 @@ const getCharactersWritten = async (userId) => {
         where: {
             userId,
             deletedAt: {
-                [Op.eq]: null,
+                [Sequelize.Op.eq]: null,
             },
         },
         group: [
@@ -223,12 +261,13 @@ const updateCounter = async (type, userId, count) => {
     );
 };
 
-module.exports = {
+export {
     createAchievementLog,
     createCounter,
     createRoleplayLog,
     getAchievement,
     getAchievements,
+    getCurrencyLeader,
     getUserAchievements,
     getCharacters,
     getCharactersWritten,

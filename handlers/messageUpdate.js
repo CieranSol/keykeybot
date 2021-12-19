@@ -1,5 +1,5 @@
-const { updateRoleplayLog } = require("../dataAccessors.js");
-const { hasRoleplay } = require("../logic.js");
+import { updateRoleplayLog } from "../dataAccessors.js";
+import { hasRoleplay } from "../logic.js";
 
 const messageUpdate = async (oldMessage, newMessage) => {
     // when a roleplay message is updated, we should update the DB
@@ -14,6 +14,4 @@ const messageUpdate = async (oldMessage, newMessage) => {
     }
 };
 
-module.exports = {
-    messageUpdate,
-};
+export { messageUpdate };
