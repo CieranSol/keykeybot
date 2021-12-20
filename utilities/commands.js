@@ -99,6 +99,52 @@ const commands = [
     new SlashCommandBuilder()
         .setName("word")
         .setDescription("Word of the day."),
+    new SlashCommandBuilder()
+        .setName("achievements")
+        .setDescription("List all achievements."),
+    new SlashCommandBuilder()
+        .setName("badge")
+        .setDescription("Sets the badge next to your name.")
+        .addStringOption((option) =>
+            option
+                .setName("emoji")
+                .setDescription("The badge you'd like to switch to.")
+                .setRequired(true)
+        ),
+    new SlashCommandBuilder()
+        .setName("profile")
+        .setDescription("Displays a user's profile.")
+        .addUserOption((option) =>
+            option
+                .setName("user")
+                .setDescription(
+                    "Which user's profile. Leave empty to see your own."
+                )
+        ),
+    new SlashCommandBuilder()
+        .setName("fact")
+        .setDescription("Checks if the bot knows anything about a user.")
+        .addUserOption((option) =>
+            option
+                .setName("user")
+                .setDescription("Which user. Leave empty for yourself.")
+        ),
+    new SlashCommandBuilder()
+        .setName("leaders")
+        .setDescription("View leaderboards.")
+        .addStringOption((option) =>
+            option
+                .setName("board")
+                .setDescription("Which leaderboard to display.")
+                .addChoice("Current 12 hours", "hour")
+                .addChoice("Previous 12 hours", "phour")
+                .addChoice("Today", "day")
+                .addChoice("Yesterday", "pday")
+                .addChoice("This week", "week")
+                .addChoice("Last week", "pweek")
+                .addChoice("This month", "month")
+                .addChoice("Last month", "pmonth")
+        ),
 ];
 
 (async function () {

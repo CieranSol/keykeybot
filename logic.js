@@ -108,7 +108,7 @@ const hasRoleplay = async (message) => {
 };
 
 // generates the leaderboard string
-const generateLeaderboard = async (message, label, from, to, client) => {
+const generateLeaderboard = async (username, label, from, to, client) => {
     // get the list of leaders from the database
     const leaders = await getLeaderboard(from, to);
     // take the list of leader IDs, and transform it into an array of strings:
@@ -127,9 +127,7 @@ const generateLeaderboard = async (message, label, from, to, client) => {
         .join("\n");
     // easter egg for Andy
     const leaderboardTitle =
-        message.author.username === "AndyGargantya"
-            ? "таблица лидеров"
-            : "Leaderboard";
+        username === "AndyGargantya" ? "таблица лидеров" : "Leaderboard";
     // return the fully compiled output
     return `**${label} ${leaderboardTitle}**
 \`\`\`

@@ -38,7 +38,6 @@ import {
     createRoleplayLog,
     getCurrencyLeader,
     getUserAchievements,
-    getAchievements,
     getCharactersWritten,
     getCounter,
     createCounter,
@@ -46,10 +45,8 @@ import {
 } from "../dataAccessors.js";
 import {
     generateLeaderboard,
-    getWebhook,
     hasRoleplay,
     stripTupperReplies,
-    switchActiveAchievement,
     grantAchievement,
     getUids,
 } from "../logic.js";
@@ -169,19 +166,15 @@ const message = async (message, client, pendingBotMessages) => {
     const command = args.shift().toLowerCase();
 
     if (["a", "achievements"].includes(command)) {
-        await getAchievementsList(args, client, message);
+        message.reply({ content: "Use /achievements.", ephemeral: true });
     }
 
     if (["b", "badge"].includes(command)) {
-        await setBadge(args, client, message);
+        message.reply({ content: "Use /badge.", ephemeral: true });
     }
 
     if (["p", "profile"].includes(command)) {
-        await getProfile(args, client, message);
-    }
-
-    if (["e", "earned"].includes(command)) {
-        await getCurrencyLeaderboard(message, client);
+        message.reply({ content: "Use /profile.", ephemeral: true });
     }
 
     // all the leaderboard commands
@@ -196,23 +189,7 @@ const message = async (message, client, pendingBotMessages) => {
         "pmonth",
     ];
     if (leaderboardCommands.includes(command)) {
-        // compose the leaderboard
-        const leaderboardString = await getLeaderboard(
-            message,
-            command,
-            client
-        );
-        message.reply(leaderboardString);
-    }
-
-    // mando's command
-    if (command === "mando") {
-        message.reply("say one thing about mando, say he's a coffee slut.");
-    }
-
-    // easter egg for cyle
-    if (message.author.username === "CowboyFarmerOnMars") {
-        message.reply("HELLO BROTHER");
+        message.reply({ content: "Use /leaders.", ephemeral: true });
     }
 };
 
@@ -426,42 +403,6 @@ const getLeaderboard = async (message, command, client) => {
         client
     );
     return response;
-};
-
-// get the list of all the non-special achievements
-const getAchievementsList = async (args, client, message) => {
-    const achievements = await getAchievements(true);
-    const achArray = await Promise.all(
-        achievements.map(async (a) => {
-            const guild = await client.guilds.fetch(GUILD_ID);
-            const role = await guild.roles.fetch(a.roleId);
-            return { ...a, name: role.name };
-        })
-    );
-    const str = achArray
-        .sort((a, b) => (a.name > b.name ? 1 : -1))
-        .map((a) => `${a.icon} **${a.name}** - ${a.description}`);
-    const embed = new MessageEmbed()
-        .setColor("#F1C30E")
-        .setTitle("Achievements")
-        .setDescription(str.length > 0 ? str.join("\n") : "");
-    message.channel.send({ embeds: [embed] });
-};
-
-// sets a user's badge next to their name
-const setBadge = async (args, client, message) => {
-    const userAchievements = await getUserAchievements(message.author.id);
-    const emojiList = userAchievements.map(
-        (a) => a.dataValues.achievement.dataValues
-    );
-    console.log(`EMOJI: ->${args[0]}<-`);
-    const emoji = emojiList.find((e) => e.icon === args[0]);
-    // check if they have the emoji theyre requesting
-    if (emoji) {
-        switchActiveAchievement(emoji.id, message.author.id, client);
-    } else {
-        message.reply("*Sorry, you don't have this badge.*");
-    }
 };
 
 const getProfile = async (args, client, message) => {
